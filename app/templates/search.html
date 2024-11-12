@@ -1,0 +1,90 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+    Search
+{% endblock title %}
+
+{% block content %}
+    <!-- Search Form -->
+    <form action="{% url 'search_term' %}" method="post">
+        {% csrf_token %}
+        <input type="search" name="search_query" placeholder="Search..." id="">
+        <input type="submit" value="Submit">
+    </form>
+
+    <!-- Display results if a query is made -->
+    {% if query %}
+        <!-- Show counts of found posts and users -->
+        <p>Found {{ count }} post(s) containing "{{ query }}"</p>
+        <p>Found {{ count_user }} user(s) containing "{{ query }}"</p>
+
+        <!-- Display Posts matching the query -->
+        <h1>Posts</h1>
+        {% for data in posts %}
+            <a href="{% url 'creator_profile' data.user.id %}">{{ data.user.username }}</a>
+
+            <!-- Show profile picture if available -->
+            {% if data.creator_profile %}
+                <img src="{{ data.creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
+            {% endif %}
+
+            <!-- Show post media if available -->
+            {% if data.media %}
+                <img src="{{ data.media.url }}" width="200" alt="Post Media">
+            {% endif %}
+
+            <!-- Show post content and creation time -->
+            <p><a href="{% url 'posts_detail' data.id %}">{{ data.content }}</a></p>
+            <p>{{ data.created_at }}</p>
+            <hr>
+            {% empty %}
+            <p> post not available</p>
+        {% endfor %}
+
+        <!-- Display Users matching the query -->
+        <h1>Users</h1>
+        {% for user in users %}
+            <a href="{% url 'creator_profile' user.id %}">{{ user.username }}</a>
+            {% empty %}
+            <p> user not available</p>
+
+        {% endfor %}
+
+        <!-- Display fuzzy search suggestions if no exact matches found -->
+        {% if post_suggestions or user_suggestions %}
+            <h3>Did you mean?</h3>
+            <ul>
+                <!-- Post Suggestions -->
+                <li>Post suggestions:</li>
+                {% for suggestion in post_suggestions %}
+                    <p><a href="{% url 'posts_detail' suggestion.id %}">{{ suggestion.content }}</a></p>
+                {% endfor %}
+
+                <!-- User Suggestions -->
+                <li>User suggestions:</li>
+                {% for suggestion in user_suggestions %}
+                    <p><a href="{% url 'creator_profile' suggestion.id %}">{{ suggestion.username }}</a></p>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% else %}
+        <!-- Display search history if no query is made -->
+        <h2>Search History</h2>
+        <a href="{% url 'history_list' %}">View All Search History</a>
+
+        <!-- Show option to clear all search history -->
+        <div>
+            {% if history %}
+                <a href="{% url 'clear_search_history' %}">Clear All Search History</a>
+            {% endif %}
+
+            <!-- Display the last 5 search history items -->
+            {% for history in history %}
+                <p>{{ history.query }}</p>
+                <a href="{% url 'delete_search_history_item' history.id %}">Delete</a>
+            {% empty %}
+                <p>No search history found.</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock content %}

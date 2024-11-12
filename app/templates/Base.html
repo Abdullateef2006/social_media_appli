@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>
+
+
+        {% block title %}
+
+        {% endblock title %}
+
+    </title>
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
+
+</head>
+
+<body>
+
+    {% if user.is_authenticated %}
+
+    <p>hi this is a social media app</p>
+    <p>hi {{ user.username }}</p>
+    <p>hi {{ user.id }}</p>
+
+
+
+    <div style="display: flex; gap:30px;">
+        <a href="{% url 'home' %}">home</a>
+        <a href="{% url 'logout' %}">logout</a>
+        <a href="{% url 'profile' %}">profile</a>
+        <a href="{% url 'posts' %}">posts</a>
+        <a href="{% url 'favourite_post' %}">saved posts</a>
+        <a href="{% url 'create_post' %}">create post</a>
+        <a href="{% url 'notification' %}">🔔 notifications</a>
+        <a href="{% url 'chat:user_list' %}"> chat </a>
+        <a href="{% url 'search_term' %}"> search </a>
+        <a href="{% url 'history_list' %}"> history list </a>
+
+
+        
+
+
+    </div>
+
+   
+    {% else %}
+    <a href="{% url 'home' %}">home</a>
+    <a href="{% url 'login' %}">login</a>
+
+    {% endif %}
+
+    {% block content %}
+
+
+    {% endblock content %}
+    <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
+
+
+    
+
+
+
+
+</body>
+
+</html>

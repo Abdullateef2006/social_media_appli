@@ -1,0 +1,292 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+Chat Room
+
+{% endblock title %}
+
+
+
+{% block content %}
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #e9ecef;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        text-align: center;
+        color: #343a40;
+        margin: 20px 0;
+    }
+
+    #online-users {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        margin: 10px auto;
+        max-width: 300px;
+    }
+
+    #online-users strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1.2em;
+    }
+
+    #online-users-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #chat-log {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        height: 400px;
+        overflow-y: auto;
+        margin: 10px auto;
+        max-width: 600px;
+        position: relative;
+    }
+
+    .message {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 10px;
+        position: relative;
+        clear: both;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message.left {
+        background-color: #f1f1f1;
+        text-align: left;
+        float: left;
+        max-width: 70%;
+    }
+
+    .message.right {
+        background-color: #d1e7dd;
+        text-align: right;
+        float: right;
+        max-width: 70%;
+    }
+
+    .message strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+
+    .message a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .message a:hover {
+        text-decoration: underline;
+    }
+
+    #message-input-container {
+        display: flex;
+        margin: 10px auto;
+        max-width: 600px;
+    }
+
+    #chat-message-input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-right: 5px;
+        font-size: 1em;
+    }
+
+    #file-input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-right: 5px;
+        flex: 0 0 auto;
+    }
+
+    #send-message-button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 1em;
+    }
+
+    #send-message-button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Online user status */
+    .online {
+        color: green;
+    }
+
+    .offline {
+        color: red;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+        #chat-log {
+            height: 300px;
+        }
+
+        #message-input-container {
+            flex-direction: column;
+        }
+
+        #chat-message-input,
+        #file-input,
+        #send-message-button {
+            width: 100%;
+            margin: 5px 0;
+        }
+    }
+</style>
+
+<h1>Chat between {{ room_name }}</h1>
+<div id="online-users">
+    <strong>Online Users:</strong>
+    <ul id="online-users-list"></ul>
+</div>
+<div id="chat-log">
+    {% for message in messages %}
+    <div class="message {% if message.user == request.user %}right{% else %}left{% endif %}">
+        <strong>{{ message.user.username }}:</strong>
+        {% if message.content %}
+        <p>{{ message.content }}</p>
+        {% endif %}
+        {% if message.file %}
+        <img src="{{ message.file.url }}" alt="no image" width="250">
+        <p><a href="{{ message.file.url }}" target="_blank">Download File</a></p>
+        {% endif %}
+        <span style="font-size: 0.8em; color: #666;">{{ message.timestamp }}</span>
+        {% if message.user != request.user and message.seen %}
+        <span class="seen-status" style="font-size: 0.8em; color: green;">Seen</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div id="message-input-container">
+    <input type="text" id="chat-message-input" placeholder="Type a message..." autocomplete="off">
+    <input type="file" id="file-input" accept="*/*">
+    <button id="send-message-button"><i class="fas fa-paper-plane"></i> Send</button>
+</div>
+
+<script>
+    const roomName = "{{ room_name }}";
+    const currentUser = "{{ request.user.username }}";
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const chatSocket = new WebSocket(
+    protocol + window.location.host + '/ws/chat/' + roomName + '/'
+);
+
+    chatSocket.onopen = function (e) {
+        console.log("The connection was set up successfully!");
+    };
+
+    chatSocket.onmessage = function (e) {
+    const data = JSON.parse(e.data);
+
+    if (data.type === 'user_status_update') {
+        // Update the list of online users
+        const onlineUsersList = document.getElementById('online-users-list');
+        onlineUsersList.innerHTML = '';
+
+        data.online_users.forEach(username => {
+            const listItem = document.createElement('li');
+            listItem.textContent = username;
+            if (username === currentUser) {
+                listItem.style.fontWeight = 'bold';
+                listItem.textContent += ' (You)';
+            }
+            onlineUsersList.appendChild(listItem);
+        });
+    } else if (data.type === 'seen_status_update') {
+        // Update the seen status for messages sent by the current user
+        const seenBy = data.seen_by;
+
+        document.querySelectorAll('.message.right').forEach(message => {
+            if (!message.querySelector('.seen-status')) {
+                const seenElement = document.createElement('span');
+                seenElement.className = 'seen-status';
+                seenElement.style.fontSize = '0.8em';
+                seenElement.style.color = 'green';
+                seenElement.textContent = 'Seen by ' + seenBy;
+                message.appendChild(seenElement);
+            }
+        });
+    } else {
+        // Handle incoming chat messages
+        const chatLog = document.querySelector('#chat-log');
+        const alignment = data.username === currentUser ? 'right' : 'left';
+        const fileLink = data.file_url ? `<p><a href="${data.file_url}" target="_blank">Download File</a></p>` : '';
+        const imageElement = data.file_url ? `<img src="${data.file_url}" width="250" alt="no image"></img>` : '';
+
+        const messageElement = `
+            <div class="message ${alignment}">
+                <strong>${data.username}:</strong>
+                <p>${data.message}</p>
+                ${imageElement}
+                ${fileLink}
+                <span style="font-size: 0.8em; color: #666;">just now</span>
+            </div>`;
+        
+        chatLog.innerHTML += messageElement;
+        chatLog.scrollTop = chatLog.scrollHeight;  // Auto-scroll to the bottom
+    }
+};
+
+
+    chatSocket.onclose = function (e) {
+        console.log('Chat socket closed unexpectedly');
+    };
+
+    document.querySelector('#send-message-button').onclick = function () {
+        const messageInputDom = document.querySelector('#chat-message-input');
+        const fileInput = document.querySelector('#file-input');
+        const message = messageInputDom.value;
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function () {
+                const base64File = reader.result.split(',')[1];
+                chatSocket.send(JSON.stringify({
+                    'message': message,
+                    'file': { 'name': file.name, 'content': base64File }
+                }));
+            };
+            reader.readAsDataURL(file);
+        } else {
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+        }
+
+        messageInputDom.value = '';
+        fileInput.value = '';
+    };
+</script>
+
+
+
+
+{% endblock content %}

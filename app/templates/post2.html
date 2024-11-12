@@ -1,0 +1,29 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+    posts
+{% endblock title %}
+
+{% block content %}
+
+{% for data in post_profile_data %}
+    <a href="{% url 'creator_profile' data.post.user.id %}">{{ data.post.user.username }}</a>
+    
+    {% if data.creator_profile %}
+        <img src="{{ data.creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
+    {% endif %}
+    
+    {% if data.post.media %}
+        <img src="{{ data.post.media.url }}" width="200" alt="Post Media">
+    {% endif %}
+    
+    <p><a href="{% url 'posts_detail' data.post.id %}">{{ data.post.content }}</a></p>
+    <p>{{ data.post.created_at }}</p>
+    
+{% empty %}
+    <p>No posts found.</p>
+{% endfor %}
+
+<hr>
+
+{% endblock content %}

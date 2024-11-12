@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="" method="get">
+        <input type="text" id="searchQuery" name="search_query" placeholder="Search..." onkeyup="fetchResults()">
+
+    </form>
+
+<div id="suggestions">
+    <!-- Suggestions will appear here -->
+</div>
+
+<script>
+function fetchResults() {
+    const query = document.getElementById('searchQuery').value;
+    if (query.length > 2) {  // Only send request if query has more than 2 characters
+        fetch(`/search-term/?search_query=${query}`, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"  // Tell Django it's an AJAX request
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const suggestionBox = document.getElementById('suggestions');
+            suggestionBox.innerHTML = '';  // Clear previous suggestions
+
+            if (data.posts.length === 0 && data.users.length === 0) {
+                suggestionBox.innerHTML = '<p>No results found</p>';
+                return;
+            }
+
+            // Display posts suggestions
+            if (data.posts.length > 0) {
+                suggestionBox.innerHTML += '<h4>Posts</h4>';
+                data.posts.forEach(post => {
+                    suggestionBox.innerHTML += `<p>${post.content}</p>`;
+                });
+            }
+
+            // Display user suggestions
+            if (data.users.length > 0) {
+                suggestionBox.innerHTML += '<h4>Users</h4>';
+                data.users.forEach(user => {
+                    suggestionBox.innerHTML += `<p>${user.username}</p>`;
+                });
+            }
+        })
+        .catch(error => console.log(error));
+    } else {
+        document.getElementById('suggestions').innerHTML = '';  // Clear suggestions if query is too short
+    }
+}
+</script>
+
+    
+</body>
+</html>

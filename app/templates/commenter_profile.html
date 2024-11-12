@@ -1,0 +1,81 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+    {{ profile.user.username }}'s Profile
+{% endblock title %}
+
+{% block content %}
+    <h2>{{ profile.user.username }}'s Profile</h2>
+
+    <p><strong>ID:</strong> {{ profile.user.id }}</p>
+    <p><strong>Username:</strong> {{ profile.user.username }}</p>
+    <p><strong>Email:</strong> {{ profile.user.email }}</p>
+
+    <p><strong>First Name:</strong> {{ profile.user.first_name }}</p>
+    <p><strong>Last Name:</strong> {{ profile.user.last_name }}</p>
+
+    {% if profile.profile_picture %}
+        <p><strong>Profile Picture:</strong></p>
+        <img src="{{ profile.profile_picture.url }}" alt="Profile picture of {{ profile.user.username }}" width="100">
+    {% else %}
+        <p>No profile picture available.</p>
+    {% endif %}
+
+    <p><strong>Bio:</strong> {{ profile.bio }}</p>
+    <p><strong>Contact Info:</strong> {{ profile.contact_info }}</p>
+    <p><strong>Phone Number:</strong> {{ profile.phone_number }}</p>
+
+    {% if user.is_authenticated %}
+    <form action="{% url 'follow_user' profile.user.id %}" method="POST">
+        {% csrf_token %}
+        {% if user in profile.followers.all %}
+            <button type="submit" class="btn btn-danger">Unfollow</button>
+        {% else %}
+            <button type="submit" class="btn btn-success">Follow</button>
+        {% endif %}
+    </form>
+
+    <a href="{% url 'chat:room' room_name=profile.user.username|add:'_'|add:user.username %}">
+        say hi
+    </a>
+    <p>{{ profile.total_followers }} Follower{{ profile.total_followers|pluralize }}</p>
+    <p>Following {{ profile.total_following }} users</p>
+{% endif %}
+
+
+    <p>posts</p>
+{% for posts in post  %}
+<a href="{% url 'posts_detail' posts.id %}">{{posts.content}}</a>
+<p>{{posts.media}}</p>
+<p>{{posts.created_at}}</p>
+
+{% empty %}
+<p>No posts available.</p>
+
+    
+{% endfor %}
+
+ <!-- Followers List -->
+ <h4>Followers:</h4>
+ {% if profile.followers.all %}
+     <ul>
+         {% for follower in profile.followers.all %}
+             <li><a href="{% url 'creator_profile' follower.id %}">{{ follower.username }}</a></li>
+         {% endfor %}
+     </ul>
+ {% else %}
+     <p>No followers yet.</p>
+ {% endif %}
+
+ <!-- Following List -->
+ <h4>Following:</h4>
+ {% if profile.user.following.all %}
+     <ul>
+         {% for following in profile.user.following.all %}
+             <li><a href="{% url 'creator_profile' following.id %}">{{ following.user.username }}</a></li>
+         {% endfor %}
+     </ul>
+ {% else %}
+     <p>Not following anyone yet.</p>
+ {% endif %}
+{% endblock content %}

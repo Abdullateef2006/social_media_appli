@@ -1,0 +1,84 @@
+{% extends 'Base.html' %}
+{% load social_share %}
+{% add_copy_script %}
+
+{% block title %}
+posts
+{% endblock title %}
+
+{% block content %}
+
+<a href="{% url 'creator_profile' post.user.id %}">{{ post.user.username }}</a>
+{% if creator_profile %}
+    <img src="{{ creator_profile.profile_picture.url }}" width="100" alt=""> <!-- Display creator's profile information -->
+{% endif %}
+
+{% if post.media %}
+    <img src="{{ post.media.url }}" width="200">
+{% endif %}
+
+<p>{{ post.content }}</p>
+<p>{{ post.created_at|timesince }} ago</p>
+
+<a href="{% url 'saved_post' post.id %}">Save Post</a>
+
+<div class="share-buttons">
+    <!-- Facebook Share -->
+    {% post_to_facebook request.build_absolute_uri post.title "btn-facebook" %}
+
+    <!-- Twitter Share -->
+    {% post_to_twitter post.title request.build_absolute_uri "Share on Twitter" "btn-twitter" %}
+
+    <!-- LinkedIn Share -->
+    {% post_to_linkedin request.build_absolute_uri  "btn-linkedin" %}
+
+    <!-- WhatsApp Share -->
+    {% post_to_whatsapp request.build_absolute_uri post.title "btn-facebook" %}
+
+    <!-- Copy to Clipboard -->
+    {% add_copy_script %}
+    {% copy_to_clipboard request.build_absolute_uri post.title "Copy to clipboard!" %}
+</div>
+
+<!-- Like/Unlike Button and Like Count -->
+<div class="like-section">
+    <form action="{% url 'like_post' post.id %}" method="POST">
+        {% csrf_token %}
+        {% if user.is_authenticated %}
+            {% if user in post.likes.all %}
+                <button type="submit" class="btn btn-danger">Unlike</button>
+            {% else %}
+                <button type="submit" class="btn btn-success">Like</button>
+            {% endif %}
+            <p>{{ post.total_likes }} Like{{ post.total_likes|pluralize }}</p>
+        {% else %}
+            <p>You must be logged in to like this post.</p>
+        {% endif %}
+    </form>
+</div>
+
+<h4>Comments:</h4>
+{% if comments %}
+<ul>
+    {% for comment in comments %}
+    <li>
+        <a href="{% url 'commenter_profile' comment.user.id %}">{{ comment.user.username }}</a>
+        : {{ comment.content }} ({{ comment.created_at }})
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No comments yet.</p>
+{% endif %}
+
+<h4>Add a comment:</h4>
+<form method="POST">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <input type="hidden" name="post_id" value="{{ post.id }}">
+    <button type="submit">Submit Comment</button>
+</form>
+
+<hr>
+
+{% endblock content %}

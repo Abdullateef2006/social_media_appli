@@ -1,0 +1,25 @@
+{% extends 'Base.html' %}
+
+
+{% block title %}
+ Favourite posts
+    
+{% endblock title %}
+    
+
+
+{% block content %}
+<p>hi</p>
+
+{% for saved in saved_post %}
+
+<a href="{% url 'posts_detail' saved.name.id %}">{{saved.name.content}}</a>
+
+<p>{{saved.name.media}}</p>
+<p>{{saved.name.created_at|timesince}} ago</p>
+
+    
+{% endfor %}
+    
+{% endblock content %}
+    

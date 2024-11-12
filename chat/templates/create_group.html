@@ -1,0 +1,19 @@
+<!-- templates/create_group.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Chat Group</title>
+</head>
+<body>
+    <h1>Create a New Group</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create Group</button>
+    </form>
+
+    <a href="{% url 'chat:group_list' %}">Back to Group List</a>
+</body>
+</html>

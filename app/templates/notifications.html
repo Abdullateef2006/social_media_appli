@@ -1,0 +1,21 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+home
+    
+{% endblock title %}
+
+
+
+{% block content %}
+
+{% for notifications in notifications %}
+
+<p>{{ notifications.user }} commented on your post {{notifications.posts.content}}</p>
+<p>{{notifications.created_at}}</p>
+
+{% endfor %}
+    
+{% endblock content %}
+    
+    

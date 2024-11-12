@@ -1,0 +1,66 @@
+templates/chat.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+</head>
+<body>
+    <h2>Room: {{ room_name }}</h2>
+    <h3>Members:</h3>
+    <ul>
+        {% for member in members %}
+            <li>{{ member.username }}</li>
+        {% empty %}
+            <li>No members yet.</li>
+        {% endfor %}
+    </ul>
+
+    <textarea id="chat-log" cols="100" rows="20" readonly></textarea><br>
+    <input id="chat-message-input" type="text" size="100"><br>
+    <button id="chat-message-submit">Send</button>
+
+    <script>
+        const roomName = "{{ room_name }}";
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/groupchat/' + roomName + '/'
+        );
+
+        chatSocket.onopen = function (e) {
+            console.log('chat socket is opened');
+            
+        }
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const message = data.message;
+
+            const chatLog = document.querySelector('#chat-log');
+            chatLog.value += message + '\n';
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // Enter key
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+
+    <a href="{% url 'chat:group_list' %}">Back to Group List</a>
+</body>
+</html>

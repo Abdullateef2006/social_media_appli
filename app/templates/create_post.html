@@ -1,0 +1,25 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+create posts
+    
+{% endblock title %}
+
+
+
+{% block content %}
+<h1>create posts</h1>
+
+<form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <!-- {{form.as_p}}
+    <button type="submit">submit</button> -->
+
+    <input type="text" name="content" id="" placeholder="type what is i your mid">
+    <input type="file" name="files" id="">
+    <button type="submit">submit</button> 
+
+</form>
+    
+{% endblock content %}
+    

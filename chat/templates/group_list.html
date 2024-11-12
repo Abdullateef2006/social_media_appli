@@ -1,0 +1,42 @@
+<!-- templates/group_list.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Groups</title>
+</head>
+<body>
+    <h1>Chat Groups</h1>
+
+    <ul>
+        {% for group in groups %}
+            <li>
+                {{ group.name }} - Created by {{ group.creator.username }}
+                <br>
+                <!-- Members:
+                <ul>
+                    {% for member in group.members.all %}
+                        <li>{{ member.username }}</li>
+                    {% endfor %}
+                </ul> -->
+
+                {% if user not in group.members.all %}
+                    <a href="{% url 'chat:join_group' group.id %}">Join Group</a>
+                {% else %}
+                    <a href="{% url 'chat:groupchat' group.name %}">Go to Chat Room</a>
+                    <a href="{% url 'chat:leave_group' group.id %}">leave group</a>
+
+                {% endif %}
+
+                {% if group.creator == user %}
+                    <a href="{% url 'chat:delete_group' group.id %}">Delete Group</a>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li>No groups available.</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'chat:create_group' %}">Create a New Group</a>
+</body>
+</html>

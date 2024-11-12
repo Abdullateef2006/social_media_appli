@@ -1,0 +1,26 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+home
+    
+{% endblock title %}
+
+
+
+{% block content %}
+<h1>Welcome to my home page</h1>
+<p>Hi there this is a social media platform</p>
+
+
+{% if user.is_authenticated %}
+<a href="{% url 'logout' %}">logout</a>
+{% else %}
+<p></p>
+
+    
+{% endif %}
+    
+    
+{% endblock content %}
+    
+    

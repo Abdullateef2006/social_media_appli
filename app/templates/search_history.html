@@ -1,0 +1,33 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+search history
+    
+{% endblock title %}
+
+
+
+{% block content %}
+
+
+{% if history %}
+<a href="{% url 'clear_search_history' %}">Clear All Search History</a>
+
+    
+{% endif %}
+{% for history in history %}
+<p>{{history.query}}</p>
+<p>{{history.timestamp}}</p>
+<a href="{% url 'delete_search_history_item' history.id %}">Delete</a>
+{% empty %}
+<p>No search history found.</p>
+
+    
+{% endfor %}
+
+
+    
+    
+{% endblock content %}
+    
+    
