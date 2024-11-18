@@ -628,3 +628,5 @@ def notifications_view(request):
     notifications = Notifications.objects.filter(receiver=request.user).order_by('-created_at')
     return render(request, 'notifications.html', {'notifications': notifications})
 
+def function_name():
+    pass
