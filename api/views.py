@@ -183,7 +183,7 @@ class PostDetailAPIView(APIView):
             comment = comment_serializer.save()
 
             # Create a notification for the post creator
-            Notification.objects.create(posts=post, user=request.user)
+            Notifications.objects.create(posts=post, user=request.user)
 
             return Response(comment_serializer.data, status=status.HTTP_201_CREATED)
         return Response(comment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)

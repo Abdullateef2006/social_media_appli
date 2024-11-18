@@ -10,7 +10,9 @@ urlpatterns = [
     path('profile/', profile, name='profile'),
     path('create_post/', create_post, name='create_post'),
     path('posts/', posts, name='posts'),
-    path('notification/', notification, name='notification'),
+    # path('notification/', notification, name='notification'),
+    path('notifications/', notifications_view, name='notifications'),
+
     path('chat/', chatPage, name='chat'),
     path('posts/<int:id>/', post_detail, name='posts_detail'),
     path('creator_profile/<int:id>/', creator_profile, name='creator_profile'),
@@ -18,6 +20,8 @@ urlpatterns = [
     path('saved_post/<int:id>/', Savedposts,  name='saved_post'),
     path('search/', search, name='search'),
     path('posts/<int:id>/like/', like_post, name='like_post'),
+    path('post/<int:id>/likes/', like_posts, name='like_posts'),
+
     path('follow/<int:user_id>/', follow_user, name='follow_user'),
     path('favourite_post/', saved_posts_list, name='favourite_post'),
     path('search_term/' , search_term, name='search_term' ),

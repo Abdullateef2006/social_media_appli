@@ -5,7 +5,7 @@ from .models import *
 
 admin.site.register(Profile)
 admin.site.register(Comment)
-admin.site.register(Notification)
+admin.site.register(Notifications)
 
 
 admin.site.register(Post)

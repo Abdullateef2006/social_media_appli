@@ -8,6 +8,8 @@ from .forms import *
 from .models import *
 from django.db.models import Q
 from fuzzywuzzy import process
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 
@@ -30,6 +32,8 @@ def user_register(request):
                     username=username, email=email, password=password1)
                 user.save()
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                Profile.objects.create(bio="default", user=request.user)
+
                 messages.success(
                     request, 'Your account has been activated successfully.')
                 return redirect('home')
@@ -143,38 +147,133 @@ def posts(request):
 
 
 
+# @login_required(login_url='login')
+# def post_detail(request, id):
+#     posts = Post.objects.get(id=id)
+#     if request.method == 'POST':
+#         comment_form = CommentForm(request.POST)
+
+#         if comment_form.is_valid():
+#             post_id = request.POST.get('post_id')
+#             post = get_object_or_404(Post, id=post_id)
+#             comment = comment_form.save(commit=False)
+#             comment.post = post
+#             comment.user = request.user
+#             comment.save()
+#             if post.user != request.user:  # Avoid notifying self-comments
+#                 Notifications.objects.create(
+#                     receiver=post.user,  # The post owner
+#                     sender=request.user,  # The commenter
+#                     post=post,
+#                     notification_type='comment',
+#                     message=f"{request.user.username} commented on your post."
+#                 )
+#                 channel_layer = get_channel_layer()
+#                 async_to_sync(channel_layer.group_send)(
+#                 f"notifications_{post.user.username}",
+#                 {
+#                     "type": "send_notification",
+#                     "message": f"{request.user.username} commented on your post.",
+#                 }
+#             )
+#             # notification = Notification.objects.create(posts=posts, user = comment.user)
+#             # notification.save()
+            
+#             return redirect('posts_detail' , id=id)
+
+#     else:
+#         comment_form = CommentForm()
+
+#     comments = Comment.objects.filter(post=posts)
+#     creator = posts.user
+#     creator_profile = Profile.objects.get(user=creator)
+
+#     return render(request, 'post_details.html', {
+#         'post': posts,
+#         'creator_profile': creator_profile,
+#         'comments': comments,
+#         'comment_form': comment_form,
+#     })
+
+# views.py
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from .models import Post, Comment, Reply, Notifications
+from .forms import CommentForm, ReplyForm
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 @login_required(login_url='login')
 def post_detail(request, id):
-    posts = Post.objects.get(id=id)
+    posts = get_object_or_404(Post, id=id)
     if request.method == 'POST':
-        comment_form = CommentForm(request.POST)
+        if 'comment_form' in request.POST:
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.post = posts
+                comment.user = request.user
+                comment.save()
+                # Send notification for comment
+                if posts.user != request.user:
+                    Notifications.objects.create(
+                        receiver=posts.user,
+                        sender=request.user,
+                        post=posts,
+                        notification_type='comment',
+                        message=f"{request.user.username} commented on your post."
+                    )
+                    # Send real-time notification
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"notifications_{posts.user.username}",
+                        {"type": "send_notification", "message": f"{request.user.username} commented on your post."}
+                    )
+                return redirect('posts_detail', id=id)
 
-        if comment_form.is_valid():
-            post_id = request.POST.get('post_id')
-            post = get_object_or_404(Post, id=post_id)
-            comment = comment_form.save(commit=False)
-            comment.post = post
-            comment.user = request.user
-            comment.save()
-            notification = Notification.objects.create(posts=posts, user = comment.user)
-            notification.save()
-            
-            return redirect('posts_detail' , id=id)
-
+        elif 'reply_form' in request.POST:
+            reply_form = ReplyForm(request.POST)
+            comment_id = request.POST.get('comment_id')
+            comment = get_object_or_404(Comment, id=comment_id)
+            if reply_form.is_valid():
+                reply = reply_form.save(commit=False)
+                reply.comment = comment
+                reply.user = request.user
+                reply.save()
+                # Notification for reply
+                if comment.user != request.user:
+                    Notifications.objects.create(
+                        receiver=comment.user,
+                        sender=request.user,
+                        post=posts,
+                        notification_type='reply',
+                        message=f"{request.user.username} replied to your comment  {comment.post}."
+                    )
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                    f"notifications_{comment.user.username}",
+                    {
+                        "type": "send_notification",
+                        "message": f"{request.user.username}  replied to your comment {comment.post}.",
+                    }
+            )
+                return redirect('posts_detail', id=id)
     else:
         comment_form = CommentForm()
+        reply_form = ReplyForm()
 
-    comments = Comment.objects.filter(post=posts)
-    creator = posts.user
-    creator_profile = Profile.objects.get(user=creator)
+    comments = Comment.objects.filter(post=posts).prefetch_related('replies')
+    creator_profile = Profile.objects.get(user=posts.user)
+    
 
     return render(request, 'post_details.html', {
         'post': posts,
         'creator_profile': creator_profile,
         'comments': comments,
         'comment_form': comment_form,
+        'reply_form': reply_form,
     })
-
 
 @login_required(login_url='login')
 def creator_profile(request, id):
@@ -331,23 +430,157 @@ def search_term(request):
 
 
     
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from .models import Post, Notifications
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+@login_required(login_url='login')
+def like_posts(request, id):
+    post = get_object_or_404(Post, id=id)
+    user = request.user
+
+    # Toggle like/unlike
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        liked = False
+    else:
+        post.likes.add(request.user)
+        liked = True
+        if post.user != user:  # Avoid notifying oneself
+            Notifications.objects.create(
+                sender=user,
+                receiver=post.user,
+                notification_type="like",
+                post=post,
+                message=f"{user.username} liked your post"
+            )
+
+            # Send WebSocket notification
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"notifications_{post.user.username}",
+                {
+                    "type": "send_notification",
+                    "message": f"{user.username} liked your post",
+                }
+            )
+    total_likes = post.total_likes  # Ensure this property is being used correctly
+
+    # Return JSON response
+    return JsonResponse({
+        'liked': liked,
+        'total_likes': total_likes,
+        
+        'like_count_text': f"{total_likes} Like{'s' if total_likes != 1 else ''}",
+    })
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from .models import Post, Notifications
+
 @login_required(login_url='login')
 def like_post(request, id):
     post = get_object_or_404(Post, id=id)
-    if request.user in post.likes.all():
-        post.likes.remove(request.user)
+    user = request.user
+
+    if user in post.likes.all():
+        post.likes.remove(user)
+        liked = False
     else:
-        post.likes.add(request.user)
+        post.likes.add(user)
+        liked = True
+        # Create a notification if the user liked someone else's post
+        if post.user != user:
+            Notifications.objects.create(
+                sender=user,
+                receiver=post.user,
+                notification_type="like",
+                post=post,
+                message=f"{user.username} liked your post"
+            )
+
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"notifications_{post.user.username}",
+                {
+                    "type": "send_notification",
+                    "message": f"{user.username} liked your post",
+                }
+            )
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        # Return JSON response if it’s an AJAX request
+        return JsonResponse({
+            "liked": liked,
+            "total_likes": post.likes.count()
+        })
+    
+    # Otherwise, redirect to the post detail page
     return redirect('posts_detail', id=id)
+
+
+
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from .models import Profile, Notifications
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Profile, Notifications, User
 
 @login_required(login_url='login')
 def follow_user(request, user_id):
+    user = request.user
+
+    # Get the profile and user to follow
     profile = get_object_or_404(Profile, user_id=user_id)
-    if request.user in profile.followers.all():
-        profile.followers.remove(request.user)
+    user_to_follow = get_object_or_404(User, id=user_id)
+    
+        # Check if the current user is already following the user
+    if user in profile.followers.all():
+        # Unfollow the user
+        profile.followers.remove(user)
+        message = f"{user.username} started unfollowing you"
     else:
-        profile.followers.add(request.user)
-    return redirect('creator_profile', id = user_id)
+        # Follow the user
+        profile.followers.add(user)
+        message = f"{user.username} started following you"
+
+    # Create a notification for the follow/unfollow event
+    if user_to_follow != user:  # Prevent user from following themselves
+
+        Notifications.objects.create(
+            sender=user,
+            receiver=user_to_follow,
+            notification_type="follow",
+            message=message
+        )
+
+        # Send the notification via WebSocket
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"notifications_{user_to_follow.username}",  # User's notification group
+            {
+                "type": "send_notification",
+                "message": message,
+            }
+        )
+
+    # Redirect back to the user's profile page
+    return redirect('creator_profile', id=user_id)
+
 
 @login_required(login_url='login')
 def saved_posts_list(request):
@@ -361,13 +594,13 @@ def history_list(request):
     hisory = SearchHistory.objects.filter(user= request.user).order_by('-timestamp')
     return render(request, 'search_history.html', {'history' : hisory})
     
-@login_required(login_url='login')
-def notification(request):
-    notifications = Notification.objects.all().order_by('-created_at') 
-    context = {
-        'notifications' : notifications
-    }
-    return render(request, 'notifications.html', context )
+# @login_required(login_url='login')
+# def notification(request):
+#     notifications = Notification.objects.all().order_by('-created_at') 
+#     context = {
+#         'notifications' : notifications
+#     }
+#     return render(request, 'notifications.html', context )
     
 @login_required(login_url='login')
 def chatPage(request):
@@ -388,4 +621,10 @@ def delete_search_history_item(request, id):
 def clear_search_history(request):
     SearchHistory.objects.filter(user=request.user).delete()
     return redirect('history_list')
+
+# views.py
+@login_required
+def notifications_view(request):
+    notifications = Notifications.objects.filter(receiver=request.user).order_by('-created_at')
+    return render(request, 'notifications.html', {'notifications': notifications})
 

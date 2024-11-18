@@ -1,21 +1,38 @@
-{% extends 'Base.html' %}
-
-{% block title %}
-home
-    
-{% endblock title %}
-
-
+{% extends "base.html" %}
 
 {% block content %}
+<div class="notification-container">
+    <h2>Your Notifications</h2>
 
-{% for notifications in notifications %}
+    {% if notifications %}
+    <ul>
+        {% for notification in notifications %}
+        <div class="notification">
+            {% if notification.notification_type == 'follow' %}
+            <a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a>
 
-<p>{{ notifications.user }} commented on your post {{notifications.posts.content}}</p>
-<p>{{notifications.created_at}}</p>
+            <p>{{ notification.message }}</p>
 
-{% endfor %}
-    
+            {% elif notification.notification_type == 'like' %}
+
+
+            <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a>
+                liked your post <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content}}"</a>.</p>
+            {% elif notification.notification_type == 'comment' %}
+            <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a> commented on your post: "{{ notification.post.content }}"</p>
+            {% elif notification.notification_type == 'reply' %}
+            <a href="{% url 'creator_profile'  notification.sender.id %}">  {{ notification.sender }}</a><p>{{ notification.message }}</p>
+            {% endif %}
+            <small>{{ notification.created_at }}</small>
+        </div>
+        <hr>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No notifications at this time.</p>
+    {% endif %}
+</div>
 {% endblock content %}
-    
-    
+
+
+<!-- notifications.html -->

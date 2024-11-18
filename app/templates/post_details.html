@@ -1,16 +1,21 @@
 {% extends 'Base.html' %}
 {% load social_share %}
-{% add_copy_script %}
 
 {% block title %}
-posts
+Post Details
 {% endblock title %}
 
 {% block content %}
-
 <a href="{% url 'creator_profile' post.user.id %}">{{ post.user.username }}</a>
+
 {% if creator_profile %}
-    <img src="{{ creator_profile.profile_picture.url }}" width="100" alt=""> <!-- Display creator's profile information -->
+    {% if creator_profile.profile_picture %}
+        <img src="{{ creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
+    {% else %}
+        <p>No profile picture available</p>
+    {% endif %}
+{% else %}
+    <p>No profile information available</p>
 {% endif %}
 
 {% if post.media %}
@@ -23,34 +28,24 @@ posts
 <a href="{% url 'saved_post' post.id %}">Save Post</a>
 
 <div class="share-buttons">
-    <!-- Facebook Share -->
-    {% post_to_facebook request.build_absolute_uri post.title "btn-facebook" %}
-
-    <!-- Twitter Share -->
-    {% post_to_twitter post.title request.build_absolute_uri "Share on Twitter" "btn-twitter" %}
-
-    <!-- LinkedIn Share -->
-    {% post_to_linkedin request.build_absolute_uri  "btn-linkedin" %}
-
-    <!-- WhatsApp Share -->
-    {% post_to_whatsapp request.build_absolute_uri post.title "btn-facebook" %}
-
-    <!-- Copy to Clipboard -->
-    {% add_copy_script %}
-    {% copy_to_clipboard request.build_absolute_uri post.title "Copy to clipboard!" %}
+    {% post_to_facebook request.build_absolute_uri "Share on Facebook" "btn-facebook" %}
+    {% post_to_twitter post.content|slice:":100" request.build_absolute_uri "Share on Twitter" "btn-twitter" %}
+    {% post_to_linkedin request.build_absolute_uri "btn-linkedin" %}
+    {% post_to_whatsapp request.build_absolute_uri "Share on WhatsApp" "btn-whatsapp" %}
+    {% copy_to_clipboard request.build_absolute_uri "Copy to clipboard!" %}
 </div>
 
 <!-- Like/Unlike Button and Like Count -->
 <div class="like-section">
-    <form action="{% url 'like_post' post.id %}" method="POST">
+    <form id="like-form" action="{% url 'like_post' post.id %}" method="POST">
         {% csrf_token %}
         {% if user.is_authenticated %}
             {% if user in post.likes.all %}
-                <button type="submit" class="btn btn-danger">Unlike</button>
+                <button type="button" class="btn btn-danger" onclick="toggleLike()">Unlike</button>
             {% else %}
-                <button type="submit" class="btn btn-success">Like</button>
+                <button type="button" class="btn btn-success" onclick="toggleLike()">Like</button>
             {% endif %}
-            <p>{{ post.total_likes }} Like{{ post.total_likes|pluralize }}</p>
+            <p id="like-count">{{ post.total_likes }} Like{{ post.total_likes|pluralize }}</p>
         {% else %}
             <p>You must be logged in to like this post.</p>
         {% endif %}
@@ -59,16 +54,41 @@ posts
 
 <h4>Comments:</h4>
 {% if comments %}
-<ul>
-    {% for comment in comments %}
-    <li>
-        <a href="{% url 'commenter_profile' comment.user.id %}">{{ comment.user.username }}</a>
-        : {{ comment.content }} ({{ comment.created_at }})
-    </li>
-    {% endfor %}
-</ul>
+    <ul>
+        {% for comment in comments %}
+            <li>
+                <a href="{% url 'commenter_profile' comment.user.id %}">{{ comment.user.username }}</a>:
+                {{ comment.content }} {{ comment.created_at|timesince }} ago
+
+                <div id="replies-{{ comment.id }}" class="replies">
+                    {% for reply in comment.replies.all %}
+                        <div class="reply">
+                            <p style="margin-left: 20px;"><a href="{% url 'commenter_profile' reply.user.id %}">{{ reply.user.username }}</a>:
+                                {{ reply.content }} {{ reply.created_at|timesince }} ago</p>
+                        </div>
+                    {% endfor %}
+                    {% if comment.replies.count > 2 %}
+                        <button type="button" onclick="loadMoreReplies('{{ comment.id }}')" class="load-more-btn">Load More Replies</button>
+                    {% endif %}
+                    {% if comment.replies.count == 0 %}
+                        <p>No replies yet.</p>
+                    {% else %}
+                        <p>{{ comment.replies.count }} Reply{{ comment.replies.count|pluralize }}</p>
+                    {% endif %}
+                </div>
+
+                <form id="reply-form-{{ comment.id }}" class="reply-form" style="display: none;" method="POST" action="{% url 'posts_detail' post.id %}">
+                    {% csrf_token %}
+                    {{ reply_form.as_p }}
+                    <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                    <button type="submit" name="reply_form">Send Reply</button>
+                </form>
+                <button type="button" onclick="toggleReplyForm('{{ comment.id }}')">Reply</button>
+            </li>
+        {% endfor %}
+    </ul>
 {% else %}
-<p>No comments yet.</p>
+    <p>No comments yet.</p>
 {% endif %}
 
 <h4>Add a comment:</h4>
@@ -76,9 +96,76 @@ posts
     {% csrf_token %}
     {{ comment_form.as_p }}
     <input type="hidden" name="post_id" value="{{ post.id }}">
-    <button type="submit">Submit Comment</button>
+    <button type="submit" name="comment_form">Submit Comment</button>
 </form>
 
-<hr>
+<script>
+    function toggleLike() {
+        const form = document.getElementById('like-form');
+        const url = form.action;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('like-count').innerText = `${data.total_likes} Like${data.total_likes !== 1 ? 's' : ''}`;
+            const likeButton = form.querySelector('button');
+            if (data.liked) {
+                likeButton.innerText = 'Unlike';
+                likeButton.classList.replace('btn-success', 'btn-danger');
+            } else {
+                likeButton.innerText = 'Like';
+                likeButton.classList.replace('btn-danger', 'btn-success');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function toggleReplyForm(commentId) {
+        document.querySelectorAll('.reply-form').forEach(form => {
+            if (form.id !== `reply-form-${commentId}`) {
+                form.style.display = 'none';
+            }
+        });
+        const form = document.getElementById(`reply-form-${commentId}`);
+        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+    }
+
+    function loadMoreReplies(commentId) {
+        const repliesDiv = document.getElementById(`replies-${commentId}`);
+        const allReplies = repliesDiv.querySelectorAll('.reply');
+        const loadMoreBtn = repliesDiv.querySelector('.load-more-btn');
+
+        const visibleReplies = Array.from(allReplies).filter(reply => reply.style.display !== 'none');
+        const totalReplies = allReplies.length;
+        const nextReplies = Array.from(allReplies).slice(visibleReplies.length, visibleReplies.length + 5);
+
+        nextReplies.forEach(reply => {
+            reply.style.display = 'block';
+        });
+
+        if (visibleReplies.length + nextReplies.length >= totalReplies) {
+            loadMoreBtn.style.display = 'none';
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('.replies').forEach(repliesDiv => {
+            const allReplies = repliesDiv.querySelectorAll('.reply');
+            allReplies.forEach((reply, index) => {
+                if (index >= 5) {
+                    reply.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
 
 {% endblock content %}

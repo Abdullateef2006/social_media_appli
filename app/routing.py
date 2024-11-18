@@ -1,7 +1,8 @@
-from django.urls import path, include
-from .consumers import ChatConsumer
+# notifications/routing.py
 
-# the empty string routes to ChatConsumer, which manages the chat functionality.
+from django.urls import re_path
+from . import consumers
+
 websocket_urlpatterns = [
-    path("", ChatConsumer.as_asgi()),
+    re_path(r'ws/notifications/$', consumers.NotificationConsumer.as_asgi()),
 ]

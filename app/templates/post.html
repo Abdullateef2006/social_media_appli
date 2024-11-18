@@ -1,7 +1,6 @@
 {% extends 'Base.html' %}
 {% load social_share %}
 
-
 {% block title %}
 posts
 {% endblock title %}
@@ -21,7 +20,6 @@ posts
     {% endif %}
 
     {% if data.post.media %}
-
     <img src="{{ data.post.media.url }}" width="200" alt="Post Media">
     <video
     id="my-video"
@@ -48,19 +46,60 @@ posts
     <p><a href="{% url 'posts_detail' data.post.id %}">{{ data.post.content|truncatewords:6 }}</a></p>
     <p>{{ data.post.created_at|timesince }} ago</p>
     <a href="{% url 'saved_post' data.post.id %}">save post</a>
+    <div class="like-section">
+        <form id="like-form-{{ data.post.id }}" action="{% url 'like_posts' data.post.id %}" method="POST">
+            {% csrf_token %}
+            {% if user.is_authenticated %}
+                <button type="button" class="btn" id="like-btn-{{ data.post.id }}" onclick="toggleLike('{{ data.post.id }}')">
+                    {% if user in data.post.likes.all %}
+                        Unlike
+                    {% else %}
+                        Like
+                    {% endif %}
+                </button>
+                <p id="like-count-{{ data.post.id }}">{{ data.post.total_likes }} Like{{ data.post.total_likes|pluralize }}</p>
+            {% else %}
+                <p>You must be logged in to like this post.</p>
+            {% endif %}
+        </form>
+    </div>
     <hr>
-
-
-
-
-    {% empty %}
+{% empty %}
     <p>No posts found.</p>
-    {% endfor %}
+{% endfor %}
 
 </div>
 
+<script>
+  function toggleLike(postId) {
+    const likeButton = document.getElementById(`like-btn-${postId}`);
+    const likeCount = document.getElementById(`like-count-${postId}`);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-<hr>
+    fetch(`${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        likeCount.innerText = data.total_likes;
 
+        if (data.liked) {
+            likeButton.innerText = 'Unlike';
+            likeButton.classList.add('btn-danger');
+            likeButton.classList.remove('btn-success');
+        } else {
+            likeButton.innerText = 'Like';
+            likeButton.classList.add('btn-success');
+            likeButton.classList.remove('btn-danger');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+  }
+</script>
 
 {% endblock content %}
