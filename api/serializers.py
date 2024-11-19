@@ -97,10 +97,12 @@ class UserSerializer(serializers.ModelSerializer):
 #         return obj.followers.count()
 
 
+
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'content', 'created_at', 'user', 'post']
+
         
 class SavedPostsSerializer(serializers.ModelSerializer):
     post = PostSerializer(source='name', read_only=True)  # 'name' is the Post foreign key field

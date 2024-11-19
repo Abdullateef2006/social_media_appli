@@ -183,7 +183,14 @@ class PostDetailAPIView(APIView):
             comment = comment_serializer.save()
 
             # Create a notification for the post creator
-            Notifications.objects.create(posts=post, user=request.user)
+            if post.user != request.user:  # Avoid notifying self-comments
+                Notifications.objects.create(
+                    receiver=post.user,  # The post owner
+                    sender=request.user,  # The commenter
+                    post=post,
+                    notification_type='comment',
+                    message=f"{request.user.username} commented on your post."
+                )
 
             return Response(comment_serializer.data, status=status.HTTP_201_CREATED)
         return Response(comment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -242,12 +249,22 @@ class LikePostAPIView(APIView):
 
     def post(self, request, id):
         post = get_object_or_404(Post, id=id)
+        user = request.user
+
         if request.user in post.likes.all():
             post.likes.remove(request.user)
             message = "Unliked the post"
         else:
             post.likes.add(request.user)
             message = "Liked the post"
+            if post.user != user:  # Avoid notifying oneself
+                Notifications.objects.create(
+                    sender=user,
+                    receiver=post.user,
+                    notification_type="like",
+                    post=post,
+                    message=f"{user.username} liked your post"
+                )
         post.save()
         return Response({'message': message, 'total_likes': post.total_likes()}, status=status.HTTP_200_OK)
     
@@ -258,12 +275,27 @@ class FollowUserAPIView(APIView):
 
     def post(self, request, user_id):
         profile = get_object_or_404(Profile, user_id=user_id)
+        user_to_follow = get_object_or_404(User, id=user_id)
+
+        user = request.user
         if request.user in profile.followers.all():
             profile.followers.remove(request.user)
             message = "Unfollowed the user"
+            Notifications.objects.create(
+            sender=user,
+            receiver=user_to_follow,
+            notification_type="follow",
+            message=f"{user.username} started unfollowing you"
+        )
         else:
             profile.followers.add(request.user)
             message = "Followed the user"
+            Notifications.objects.create(
+            sender=user,
+            receiver=user_to_follow,
+            notification_type="follow",
+            message=f"{user.username} started following you"
+        )
         profile.save()
         return Response({'message': message, 'total_followers': profile.total_followers()}, status=status.HTTP_200_OK)
     
