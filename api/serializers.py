@@ -136,6 +136,10 @@ class SearchHistorySerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    sender = UserSerializer(read_only=True)
+    receiver = UserSerializer(read_only=True)
+    post = PostListSerializer()
+
     class Meta:
         model  = Notifications
         fields = "__all__"
