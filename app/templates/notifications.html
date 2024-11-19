@@ -19,7 +19,7 @@
             <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a>
                 liked your post <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content}}"</a>.</p>
             {% elif notification.notification_type == 'comment' %}
-            <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a> commented on your post: "{{ notification.post.content }}"</p>
+            <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a> commented on your post: <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content }}"</a> </p>
             {% elif notification.notification_type == 'reply' %}
             <a href="{% url 'creator_profile'  notification.sender.id %}">  {{ notification.sender }}</a><p>{{ notification.message }}</p>
             {% endif %}

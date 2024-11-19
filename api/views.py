@@ -17,6 +17,9 @@ from rest_framework import generics
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 
 class UserRegisterAPIView(generics.CreateAPIView):
@@ -191,6 +194,11 @@ class PostDetailAPIView(APIView):
                     notification_type='comment',
                     message=f"{request.user.username} commented on your post."
                 )
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"notifications_{post.user.username}",
+                    {"type": "send_notification", "message": f"{request.user.username} commented on your post."}
+                )
 
             return Response(comment_serializer.data, status=status.HTTP_201_CREATED)
         return Response(comment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -265,6 +273,14 @@ class LikePostAPIView(APIView):
                     post=post,
                     message=f"{user.username} liked your post"
                 )
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                f"notifications_{post.user.username}",
+                {
+                    "type": "send_notification",
+                    "message": f"{user.username} liked your post",
+                }
+            )
         post.save()
         return Response({'message': message, 'total_likes': post.total_likes()}, status=status.HTTP_200_OK)
     
@@ -287,6 +303,14 @@ class FollowUserAPIView(APIView):
             notification_type="follow",
             message=f"{user.username} started unfollowing you"
         )
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+            f"notifications_{user_to_follow.username}",  # User's notification group
+            {
+                "type": "send_notification",
+                "message": f"{user.username} started unfollowing you",
+            }
+        )
         else:
             profile.followers.add(request.user)
             message = "Followed the user"
@@ -296,6 +320,16 @@ class FollowUserAPIView(APIView):
             notification_type="follow",
             message=f"{user.username} started following you"
         )
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+            f"notifications_{user_to_follow.username}",  # User's notification group
+            {
+                "type": "send_notification",
+                "message": f"{user.username} started following you",
+            }
+        )
+            
+            
         profile.save()
         return Response({'message': message, 'total_followers': profile.total_followers()}, status=status.HTTP_200_OK)
     
