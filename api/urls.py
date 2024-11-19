@@ -20,8 +20,6 @@ urlpatterns = [
     path('search-history/', SearchHistoryAPIView.as_view(), name='search_history_api'),
     path('search-history/delete/<int:id>/', DeleteSearchHistoryItemAPIView.as_view(), name='delete_search_history_item_api'),
     path('search-history/clear/', ClearSearchHistoryAPIView.as_view(), name='clear_search_history_api'),
-    
-    
     path("notifications_list/", Notification.as_view(), name="notifications_list"),
     
     
