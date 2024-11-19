@@ -373,3 +373,10 @@ class ClearSearchHistoryAPIView(APIView):
     def delete(self, request):
         SearchHistory.objects.filter(user=request.user).delete()
         return Response({"message": "All search history cleared successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class Notification(APIView):
+    def get(self, response):
+        notifications = Notifications.objects.filter(receiver=response.user).order_by('-created_at')
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -132,3 +132,11 @@ class SearchHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SearchHistory
         fields = ['id', 'user', 'query', 'timestamp']
+        
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Notifications
+        fields = "__all__"
+    
