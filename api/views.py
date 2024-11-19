@@ -380,3 +380,4 @@ class Notification(APIView):
         notifications = Notifications.objects.filter(receiver=response.user).order_by('-created_at')
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    # print("hello there")
