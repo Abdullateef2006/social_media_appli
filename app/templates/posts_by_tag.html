@@ -1,0 +1,35 @@
+{% extends 'Base.html' %}
+
+{% block title %}
+home
+    
+{% endblock title %}
+
+
+
+{% block content %}
+<!-- posts_by_tag.html -->
+<h1>Posts tagged with "{{ tag.name }}"</h1>
+
+{% if posts %}
+    <ul>
+        {% for post in posts %}
+            <li>
+                <p>{{ post.content }}</p>
+                <p>Created by: {{ post.user.username }}</p>
+                <p>Posted on: {{ post.created_at }}</p>
+                <!-- Optionally, display media -->
+                {% if post.media %}
+                    <img src="{{ post.media.url }}" alt="Post media" width="200">
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No posts found with this tag.</p>
+{% endif %}
+
+    
+{% endblock content %}
+    
+    

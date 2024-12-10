@@ -1,90 +1,241 @@
 {% extends 'Base.html' %}
 
 {% block title %}
-    Search
+Search
 {% endblock title %}
 
 {% block content %}
-    <!-- Search Form -->
-    <form action="{% url 'search_term' %}" method="post">
+<!-- Add modern icons and styles -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+<style>
+  
+
+    .container {
+        width: 900px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    .search-bar {
+        display: flex;
+        justify-content: space-between;
+        background: #fff;
+        padding: 10px;
+        border-radius: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .search-bar input[type="search"] {
+        width: 80%;
+        padding: 10px;
+        border: none;
+        outline: none;
+        font-size: 16px;
+    }
+
+    .search-bar button {
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .search-bar button:hover {
+        background-color: #0056b3;
+    }
+
+    .feed {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .post-card {
+        background: #fff;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+
+    .post-header img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .post-header .username {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #007BFF;
+        text-decoration: none;
+    }
+
+    .post-header .username:hover {
+        text-decoration: underline;
+    }
+
+    .post-content {
+        margin: 10px 0;
+    }
+
+    .post-content img {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+
+    .post-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+    }
+
+    .post-footer .actions {
+        display: flex;
+        gap: 15px;
+        font-size: 1.2rem;
+        color: #555;
+    }
+
+    .post-footer .actions i {
+        cursor: pointer;
+    }
+
+    .post-footer .actions i:hover {
+        color: #007BFF;
+    }
+
+    .suggestions, .search-history {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+    }
+
+    .search-history p {
+        display: flex;
+        justify-content: space-between;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 7px;
+
+
+    }
+
+    .suggestions h3, .search-history h3 {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .suggestions a, .search-history a {
+        text-decoration: none;
+        color: #007BFF;
+    }
+
+    .suggestions a:hover, .search-history a:hover {
+        text-decoration: underline;
+    }
+
+    .no-results {
+        text-align: center;
+        color: #777;
+        margin: 20px 0;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+         width: 100%;
+        }
+     }
+</style>
+
+<div class="container">
+    <!-- Search Bar -->
+    <form action="{% url 'search_term' %}" method="post" class="search-bar">
         {% csrf_token %}
-        <input type="search" name="search_query" placeholder="Search..." id="">
-        <input type="submit" value="Submit">
+        <input type="search" name="search_query" placeholder="Search for posts or users...">
+        <button type="submit">Search</button>
     </form>
 
-    <!-- Display results if a query is made -->
     {% if query %}
-        <!-- Show counts of found posts and users -->
-        <p>Found {{ count }} post(s) containing "{{ query }}"</p>
-        <p>Found {{ count_user }} user(s) containing "{{ query }}"</p>
+        <p><strong>{{ count }}</strong> post(s) and <strong>{{ count_user }}</strong> user(s) found for "<strong>{{ query }}</strong>"</p>
 
-        <!-- Display Posts matching the query -->
-        <h1>Posts</h1>
-        {% for data in posts %}
-            <a href="{% url 'creator_profile' data.user.id %}">{{ data.user.username }}</a>
-
-            <!-- Show profile picture if available -->
-            {% if data.creator_profile %}
-                <img src="{{ data.creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
-            {% endif %}
-
-            <!-- Show post media if available -->
-            {% if data.media %}
-                <img src="{{ data.media.url }}" width="200" alt="Post Media">
-            {% endif %}
-
-            <!-- Show post content and creation time -->
-            <p><a href="{% url 'posts_detail' data.id %}">{{ data.content }}</a></p>
-            <p>{{ data.created_at }}</p>
-            <hr>
+        <!-- Feed -->
+        <div class="feed">
+            <!-- Posts -->
+            {% for data in posts %}
+            <div class="post-card">
+                <div class="post-header">
+                    <img src="{{ data.creator_profile.profile_picture.url }}" alt="Profile Picture">
+                    <a href="{% url 'creator_profile' data.user.id %}" class="username">{{ data.user.username }}</a>
+                </div>
+                <div class="post-content">
+                    {% if data.media %}
+                        <img src="{{ data.media.url }}" alt="Post Media">
+                    {% endif %}
+                    <p>{{ data.content }}</p>
+                </div>
+                <div class="post-footer">
+                    <p>{{ data.created_at }}</p>
+                    <div class="actions">
+                        <i class="fas fa-heart"></i>
+                        <i class="fas fa-comment"></i>
+                        <i class="fas fa-share"></i>
+                    </div>
+                </div>
+            </div>
             {% empty %}
-            <p> post not available</p>
-        {% endfor %}
-
-        <!-- Display Users matching the query -->
-        <h1>Users</h1>
-        {% for user in users %}
-            <a href="{% url 'creator_profile' user.id %}">{{ user.username }}</a>
-            {% empty %}
-            <p> user not available</p>
-
-        {% endfor %}
-
-        <!-- Display fuzzy search suggestions if no exact matches found -->
-        {% if post_suggestions or user_suggestions %}
-            <h3>Did you mean?</h3>
-            <ul>
-                <!-- Post Suggestions -->
-                <li>Post suggestions:</li>
-                {% for suggestion in post_suggestions %}
-                    <p><a href="{% url 'posts_detail' suggestion.id %}">{{ suggestion.content }}</a></p>
-                {% endfor %}
-
-                <!-- User Suggestions -->
-                <li>User suggestions:</li>
-                {% for suggestion in user_suggestions %}
-                    <p><a href="{% url 'creator_profile' suggestion.id %}">{{ suggestion.username }}</a></p>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% else %}
-        <!-- Display search history if no query is made -->
-        <h2>Search History</h2>
-        <a href="{% url 'history_list' %}">View All Search History</a>
-
-        <!-- Show option to clear all search history -->
-        <div>
-            {% if history %}
-                <a href="{% url 'clear_search_history' %}">Clear All Search History</a>
-            {% endif %}
-
-            <!-- Display the last 5 search history items -->
-            {% for history in history %}
-                <p>{{ history.query }}</p>
-                <a href="{% url 'delete_search_history_item' history.id %}">Delete</a>
-            {% empty %}
-                <p>No search history found.</p>
+            <p class="no-results">No posts found.</p>
             {% endfor %}
         </div>
+
+        <!-- Suggestions -->
+        {% if post_suggestions or user_suggestions %}
+        <div class="suggestions">
+            <h3>Did you mean?</h3>
+            <ul>
+                {% for suggestion in post_suggestions %}
+                <li><a href="{% url 'posts_detail' suggestion.id %}">{{ suggestion.content }}</a></li>
+                {% endfor %}
+                {% for suggestion in user_suggestions %}
+                <li><a href="{% url 'creator_profile' suggestion.id %}">{{ suggestion.username }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    {% else %}
+        <p class="no-results">No results found.</p>
+
+        <!-- Search History -->
+        <div class="search-history">
+            <h3>Search History</h3>
+            {% for history in history %}
+            <p>{{ history.query }} <a href="{% url 'delete_search_history_item2' history.id %}"><i class="fa-solid fa-xmark"></i></a></p>
+            {% empty %}
+            <p>No search history found.</p>
+            {% endfor %}
+            <a href="{% url 'clear_search_history' %}">Clear All History</a>
+        </div>
     {% endif %}
+</div>
 {% endblock content %}

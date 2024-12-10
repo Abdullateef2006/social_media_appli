@@ -1,6 +1,83 @@
 {% extends "base.html" %}
 
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+<style>
+    .notification-container {
+        width: 800px;
+        margin: 30px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .notification-container h2 {
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #333;
+    }
+
+    .notification {
+        display: flex;
+        gap: 15px;
+        padding: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        align-items: center;
+    }
+
+    .notification:last-child {
+        border-bottom: none;
+    }
+
+    .notification img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .notification-content {
+        flex: 1;
+    }
+
+    .notification-content a {
+        font-weight: bold;
+        color: #007BFF;
+        text-decoration: none;
+    }
+
+    .notification-content a:hover {
+        text-decoration: underline;
+    }
+
+    .notification-content p {
+        margin: 5px 0;
+        font-size: 1rem;
+        color: #555;
+    }
+
+    .notification-content small {
+        font-size: 0.85rem;
+        color: #777;
+    }
+
+    .no-notifications {
+        text-align: center;
+        font-size: 1rem;
+        color: #777;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .notification-container {
+            width: 100%;
+        }
+    }
+</style>
+
 <div class="notification-container">
     <h2>Your Notifications</h2>
 
@@ -8,31 +85,54 @@
     <ul>
         {% for notification in notifications %}
         <div class="notification">
-            {% if notification.notification_type == 'follow' %}
-            <a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a>
+            <div class="profilepics">
+                {% if notification.sender.profile.profile_picture %}
+                <img src="{{ notification.sender.profile.profile_picture.url }}"
+                    alt="{{ notification.sender.username }}'s profile picture">
+                {% else %}
+                <!-- Fallback to default profile picture -->
+                <img src="/static/images/default-profile.png" alt="{{ notification.sender.username }}'s profile picture">
+                {% endif %}
 
-            <p>{{ notification.message }}</p>
+            </div>
+            <!-- Profile Picture Placeholder -->
+      
+            <div class="notification-content">
+                {% if notification.notification_type == 'follow' %}
+                <p>
+                <p><a href="{% url 'creator_profile' notification.sender.id %}">{{ notification.sender.username }}</a>
+                </p>
+                started following you.</p>
 
-            {% elif notification.notification_type == 'like' %}
+                {% elif notification.notification_type == 'like' %}
+                <p>
+                <p><a href="{% url 'creator_profile' notification.sender.id %}">{{ notification.sender.username }}</a>
+                </p>
+                liked your post:
+                <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content|truncatewords:10 }}"</a>.
+                </p>
 
+                {% elif notification.notification_type == 'comment' %}
+                <p>
+                <p><a href="{% url 'creator_profile' notification.sender.id %}">{{ notification.sender.username }}</a>
+                </p>
+                commented on your post:
+                <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content|truncatewords:10 }}"</a>.
+                </p>
 
-            <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a>
-                liked your post <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content}}"</a>.</p>
-            {% elif notification.notification_type == 'comment' %}
-            <p><a href="{% url 'creator_profile'  notification.sender.id %}">{{ notification.sender.username }}</a> commented on your post: <a href="{% url 'posts_detail' notification.post.id %}">"{{ notification.post.content }}"</a> </p>
-            {% elif notification.notification_type == 'reply' %}
-            <a href="{% url 'creator_profile'  notification.sender.id %}">  {{ notification.sender }}</a><p>{{ notification.message }}</p>
-            {% endif %}
-            <small>{{ notification.created_at }}</small>
+                {% elif notification.notification_type == 'reply' %}
+                <p>
+                <p><a href="{% url 'creator_profile' notification.sender.id %}">{{ notification.sender.username }}</a>
+                </p>
+                replied: "{{ notification.message }}".</p>
+                {% endif %}
+                <small>{{ notification.created_at }}</small>
+            </div>
         </div>
-        <hr>
         {% endfor %}
     </ul>
     {% else %}
-    <p>No notifications at this time.</p>
+    <p class="no-notifications">No notifications at this time.</p>
     {% endif %}
 </div>
 {% endblock content %}
-
-
-<!-- notifications.html -->

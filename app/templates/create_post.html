@@ -1,4 +1,3 @@
-{% extends 'Base.html' %}
 
 {% block title %}
 create posts
@@ -17,6 +16,10 @@ create posts
 
     <input type="text" name="content" id="" placeholder="type what is i your mid">
     <input type="file" name="files" id="">
+    <label for="tags">Tags (comma separated)</label>
+    <input type="text" id="tags" name="tags" placeholder="e.g., Django, Python, Web Development">
+    <label for="images">Images:</label>
+    <input type="file" id="images" name="images" multiple><br><br>
     <button type="submit">submit</button> 
 
 </form>

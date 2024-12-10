@@ -57,12 +57,20 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 #         read_only_fields = ['user']+
 
 
+class PostImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostImage
+        fields = ['id', 'image']
+
+
 class PostSerializer(serializers.ModelSerializer):
     total_likes = serializers.ReadOnlyField()
+    images = PostImageSerializer(many=True)
+
     
     class Meta:
         model = Post
-        fields = ['id', 'user', 'media', 'content', 'created_at', 'total_likes']
+        fields = ['id', 'user', 'media', 'content', 'created_at', 'total_likes', 'images',]
 
 
 

@@ -6,166 +6,580 @@ Post Details
 {% endblock title %}
 
 {% block content %}
-<a href="{% url 'creator_profile' post.user.id %}">{{ post.user.username }}</a>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Signika+Negative&display=swap');
 
-{% if creator_profile %}
-    {% if creator_profile.profile_picture %}
-        <img src="{{ creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
-    {% else %}
-        <p>No profile picture available</p>
-    {% endif %}
-{% else %}
-    <p>No profile information available</p>
-{% endif %}
-
-{% if post.media %}
-    <img src="{{ post.media.url }}" width="200">
-{% endif %}
-
-<p>{{ post.content }}</p>
-<p>{{ post.created_at|timesince }} ago</p>
-
-<a href="{% url 'saved_post' post.id %}">Save Post</a>
-
-<div class="share-buttons">
-    {% post_to_facebook request.build_absolute_uri "Share on Facebook" "btn-facebook" %}
-    {% post_to_twitter post.content|slice:":100" request.build_absolute_uri "Share on Twitter" "btn-twitter" %}
-    {% post_to_linkedin request.build_absolute_uri "btn-linkedin" %}
-    {% post_to_whatsapp request.build_absolute_uri "Share on WhatsApp" "btn-whatsapp" %}
-    {% copy_to_clipboard request.build_absolute_uri "Copy to clipboard!" %}
-</div>
-
-<!-- Like/Unlike Button and Like Count -->
-<div class="like-section">
-    <form id="like-form" action="{% url 'like_post' post.id %}" method="POST">
-        {% csrf_token %}
-        {% if user.is_authenticated %}
-            {% if user in post.likes.all %}
-                <button type="button" class="btn btn-danger" onclick="toggleLike()">Unlike</button>
-            {% else %}
-                <button type="button" class="btn btn-success" onclick="toggleLike()">Like</button>
-            {% endif %}
-            <p id="like-count">{{ post.total_likes }} Like{{ post.total_likes|pluralize }}</p>
-        {% else %}
-            <p>You must be logged in to like this post.</p>
-        {% endif %}
-    </form>
-</div>
-
-<h4>Comments:</h4>
-{% if comments %}
-    <ul>
-        {% for comment in comments %}
-            <li>
-                <a href="{% url 'commenter_profile' comment.user.id %}">{{ comment.user.username }}</a>:
-                {{ comment.content }} {{ comment.created_at|timesince }} ago
-
-                <div id="replies-{{ comment.id }}" class="replies">
-                    {% for reply in comment.replies.all %}
-                        <div class="reply">
-                            <p style="margin-left: 20px;"><a href="{% url 'commenter_profile' reply.user.id %}">{{ reply.user.username }}</a>:
-                                {{ reply.content }} {{ reply.created_at|timesince }} ago</p>
-                        </div>
-                    {% endfor %}
-                    {% if comment.replies.count > 2 %}
-                        <button type="button" onclick="loadMoreReplies('{{ comment.id }}')" class="load-more-btn">Load More Replies</button>
-                    {% endif %}
-                    {% if comment.replies.count == 0 %}
-                        <p>No replies yet.</p>
-                    {% else %}
-                        <p>{{ comment.replies.count }} Reply{{ comment.replies.count|pluralize }}</p>
-                    {% endif %}
-                </div>
-
-                <form id="reply-form-{{ comment.id }}" class="reply-form" style="display: none;" method="POST" action="{% url 'posts_detail' post.id %}">
-                    {% csrf_token %}
-                    {{ reply_form.as_p }}
-                    <input type="hidden" name="comment_id" value="{{ comment.id }}">
-                    <button type="submit" name="reply_form">Send Reply</button>
-                </form>
-                <button type="button" onclick="toggleReplyForm('{{ comment.id }}')">Reply</button>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No comments yet.</p>
-{% endif %}
-
-<h4>Add a comment:</h4>
-<form method="POST">
-    {% csrf_token %}
-    {{ comment_form.as_p }}
-    <input type="hidden" name="post_id" value="{{ post.id }}">
-    <button type="submit" name="comment_form">Submit Comment</button>
-</form>
-
-<script>
-    function toggleLike() {
-        const form = document.getElementById('like-form');
-        const url = form.action;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('like-count').innerText = `${data.total_likes} Like${data.total_likes !== 1 ? 's' : ''}`;
-            const likeButton = form.querySelector('button');
-            if (data.liked) {
-                likeButton.innerText = 'Unlike';
-                likeButton.classList.replace('btn-success', 'btn-danger');
-            } else {
-                likeButton.innerText = 'Like';
-                likeButton.classList.replace('btn-danger', 'btn-success');
-            }
-        })
-        .catch(error => console.error('Error:', error));
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        text-decoration: none;
+        font-family: 'Signika Negative', sans-serif;
     }
 
-    function toggleReplyForm(commentId) {
-        document.querySelectorAll('.reply-form').forEach(form => {
-            if (form.id !== `reply-form-${commentId}`) {
-                form.style.display = 'none';
-            }
-        });
-        const form = document.getElementById(`reply-form-${commentId}`);
-        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+    body {
+        background-color: #ffffff;
+        color: #888;
+        transition: background-color 0.5s, color 0.5s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
     }
 
-    function loadMoreReplies(commentId) {
-        const repliesDiv = document.getElementById(`replies-${commentId}`);
-        const allReplies = repliesDiv.querySelectorAll('.reply');
-        const loadMoreBtn = repliesDiv.querySelector('.load-more-btn');
+    label {
+        display: none;
+    }
 
-        const visibleReplies = Array.from(allReplies).filter(reply => reply.style.display !== 'none');
-        const totalReplies = allReplies.length;
-        const nextReplies = Array.from(allReplies).slice(visibleReplies.length, visibleReplies.length + 5);
+    body.dark-mode {
+        background-color: #1e1e1e;
+        color: #fff;
+    }
 
-        nextReplies.forEach(reply => {
-            reply.style.display = 'block';
-        });
+    .container {
+        width: 800px;
+        padding: 20px;
+        border-radius: 10px;
+    }
 
-        if (visibleReplies.length + nextReplies.length >= totalReplies) {
-            loadMoreBtn.style.display = 'none';
+    body.dark-mode .container {
+        background-color: #2a2a2a;
+    }
+
+    .post-image {
+        max-width: 100%;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 1.5em;
+        color: #2196F3;
+    }
+
+    .post {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        padding: 10px;
+    }
+
+    body.dark-mode .post {
+        background-color: #333;
+        border: 1px solid #555;
+    }
+
+    .post-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 10px;
+    }
+
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .user-name {
+        color: #2196F3;
+        font-weight: bold;
+    }
+
+    a {
+        color: #000;
+        font-weight: 500;
+    }
+
+    .post-time {
+        color: #888;
+    }
+
+    .post-content {
+        color: inherit;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        color: #666;
+        margin-top: 10px;
+    }
+
+    body.dark-mode .actions {
+        color: #aaa;
+    }
+
+    .action-btn {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: #aaa;
+
+    }
+
+    .action-btn i {
+        margin-right: 5px;
+    }
+
+    .comments {
+        margin-top: 20px;
+        color: #555;
+    }
+
+    body.dark-mode .comments {
+        color: #ccc;
+    }
+
+    .comment {
+        margin-top: 10px;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+    }
+
+    body.dark-mode .comment {
+        border-top: 1px solid #555;
+    }
+
+    .comment-form {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .comment-input {
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        color: #000;
+        width: 100%;
+    }
+
+    body.dark-mode .comment-input {
+        background-color: #333;
+        border: 1px solid #555;
+        color: #fff;
+    }
+
+    .comment-submit {
+        padding: 10px;
+        background-color: #2196F3;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 10px;
+        
+    }
+
+    .comment-submit:hover {
+        background-color: #1565C0;
+    }
+
+    label.switch {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #2196F3;
+        margin-top: 20px;
+    }
+
+    body.dark-mode label.switch {
+        color: #fff;
+    }
+
+    label.switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+        background-color: #ccc;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.5s;
+    }
+
+    label.switch input:checked+.slider {
+        background-color: #2196F3;
+
+    }
+
+    label.switch input:checked+.slider:before {
+        transform: translateX(26px);
+    }
+
+    .btn_like {
+        background-color: transparent;
+        border: none;
+
+
+    }
+
+    .comment_div {
+        border: none;
+        padding: 10px;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+        margin-top: 5px;
+
+    }
+
+    .reply {
+        border: none;
+        padding: 10px;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+        margin-left: 20px;
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            width: 100%;
         }
     }
+</style>
 
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('.replies').forEach(repliesDiv => {
-            const allReplies = repliesDiv.querySelectorAll('.reply');
-            allReplies.forEach((reply, index) => {
-                if (index >= 5) {
-                    reply.style.display = 'none';
+
+<div class="container">
+
+    <div class="post">
+        <div class="post-header">
+            <div class="user-info">
+                <div class="user-avatar">
+
+                    {% if creator_profile %}
+
+                    {% if creator_profile.profile_picture %}
+                    <img src="{{ creator_profile.profile_picture.url }}" alt="User Avatar">
+
+                    {% else %}
+                    <p>No profile picture available</p>
+
+                    {% endif %}
+                    {% else %}
+                    <p>No profile information available</p>
+
+
+
+                    {% endif %}
+
+                </div>
+                <div class="user-name"><a href="{% url 'creator_profile' post.user.id %}">{{ post.user.username }}</a>
+                </div>
+            </div>
+            <div class="post-time">{{ post.created_at|timesince }} ago</div>
+        </div>
+        <div class="post-content">
+            <p>{{ post.content }}</p>
+        </div>
+        
+        <p style="margin-top: 15px;">
+            
+         
+            {% for tag in post.tags.all %}
+            
+            {% if tag.name %}
+            <a href="{% url 'posts_by_tag' tag.name %}">#{{ tag.name }}</a>
+
+                
+            {% endif %}
+                
+
+            {% endfor %}
+        </p>
+
+
+        {% if post.media %}
+
+        <img src="{{ post.media.url }}" alt="Workout Image" class="post-image" width="100%">
+        <a href="{{ post.media.url }}" download="">download</a>
+
+        {% else %}
+        <p></p>
+        {% endif %}
+
+        <div class="actions" style="margin-top: 8px; margin-bottom: 8px; ">
+
+            <div class="like-section">
+                <form id="like-form" action="{% url 'like_post' post.id %}" method="POST">
+                    <div style="display: flex; align-items: center; gap:5px; justify-content:center;">
+                        {% csrf_token %}
+                        {% if user.is_authenticated %}
+
+                        {% if user in post.likes.all %}
+                        <button style="background-color: transparent; border:none;" type="button" class="btn btn-danger"
+                            onclick="toggleLike()"><i class="fas fa-thumbs-up fa-2xl"
+                                style="color: #74C0FC;"></i></button>
+                        {% else %}
+                        <button style="background-color: transparent; border:none;" type="button"
+                            class="btn btn-success" onclick="toggleLike()"><i
+                                class="fas fa-thumbs-up fa-2xl"></i></button>
+                        {% endif %}
+                        <p id="like-count">{{ post.total_likes }} </p>
+
+                        {% else %}
+                        <p>You must be logged in to like this post.</p>
+                        {% endif %}
+
+                    </div>
+
+                </form>
+            </div>
+            <div class="action-btn" onclick="toggleComments(this)"><i class="far fa-comment"></i> <p>{{total_comments}}</p> </div>
+            <div class="action-btn"><i class="fa-brands fa-facebook fa-xl"></i> {% post_to_facebook request.build_absolute_uri " " "btn-facebook" %}
+            </div>
+            <div class="action-btn"> <a href="{% url 'saved_post' post.id %}"><i class="fas fa-bookmark fa-xl"></i></a>
+            </div>
+
+
+        </div>
+        <hr>
+
+
+
+        <!-- <div class="comment-form">
+            <input type="text" class="comment-input" placeholder="Add a comment...">
+            <button class="comment-submit" onclick="addComment(this)">Submit</button>
+        </div>
+    </div> -->
+    
+    <div class="comment-forms" style="display: none;">
+        <form method="POST" class="comment-form">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <button type="submit" name="comment_form" class="comment-submit" style="width: 100%;">Submit Comment</button>
+        </form>
+
+    </div>
+    <div class="comments" style="display: none;">
+
+        <h4>Comments:</h4>
+        {% if comments %}
+        <ul>
+
+                {% for comment in comments reversed %}
+                <li>
+                    <div class="comment_div">
+                        <p> <a href="{% url 'commenter_profile' comment.user.id %}">{{ comment.user.username }}</a> </p>
+
+                        <p style="margin-top: 4px;">{{ comment.content }}</p>
+
+                    </div>
+
+                    <form id="reply-form-{{ comment.id }}" class="reply-form"
+                        style="display: none; margin-top: 20px; margin-left: 20px;" method="POST"
+                        action="{% url 'posts_detail' post.id %}">
+                        {% csrf_token %}
+                        {{ reply_form.as_p }}
+                        <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                        <button type="submit" name="reply_form" class="comment-submit"
+                            style="margin-top: 20px; margin-bottom:20px;">Send Reply</button>
+                    </form>
+
+                    <p style="margin-top: 10px;">{{ comment.created_at|timesince }} ago</p>
+                    <button type="button" onclick="toggleReplyForm('{{ comment.id }}')" class="comment-submit"
+                        style=" margin-top: 5px;">Reply</button>
+                    <button id="toggle-replies-btn-{{ comment.id }}" class="comment-submit"
+                        onclick="toggleReplies('{{ comment.id }}')" style="margin-top: 10px;">
+                        Show Replies
+                    </button>
+
+
+                    <div id="replies-{{ comment.id }}" class="replies" style="display: none;">
+                        {% for reply in comment.replies.all reversed %}
+                        <div class="reply">
+                            <p><a href="{% url 'commenter_profile' reply.user.id %}">{{reply.user.username }}</a>:
+                            </p>
+                            <p>{{ reply.content }}</p>
+                            <p>{{ reply.created_at|timesince }} ago</p>
+
+                        </div>
+                        {% endfor %}
+
+                        {% if comment.replies.count == 0 %}
+                        <p style=" margin-top: 5px;">No replies yet.</p>
+                        {% else %}
+                        <p style="margin-top: 10px; margin-left: 20px;">{{ comment.replies.count }}
+                            Reply{{comment.replies.count|pluralize }}</p>
+                        {% endif %}
+
+                        {% if comment.replies.count > 2 %}
+                        <button type="button" onclick="loadMoreReplies('{{ comment.id }}')" class="load-more-btn">Load
+                            More
+                            Replies</button>
+                        {% endif %}
+                    </div>
+
+
+                </li>
+                {% endfor %}
+        </ul>
+        {% else %}
+        <p>No comments yet.</p>
+        {% endif %}
+    </div>
+
+
+
+
+
+
+       
+    </div>
+
+
+    <script>
+        function toggleLike() {
+            const form = document.getElementById('like-form');
+            const url = form.action;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('like-count').innerText = `${data.total_likes} `;
+                    const likeButton = form.querySelector('button');
+                    if (data.liked) {
+                        likeButton.innerHTML = '<div class="action-btn"><i class="fas fa-thumbs-up fa-2xl" style="color: #74C0FC;"></i> </div>';
+
+                    } else {
+                        likeButton.innerHTML = '<div class="action-btn"><i class="fas fa-thumbs-up fa-2xl" ></i> </div>';
+                        likeButton.classList.add('btn-success');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function toggleReplyForm(commentId) {
+            document.querySelectorAll('.reply-form').forEach(form => {
+                if (form.id !== `reply-form-${commentId}`) {
+                    form.style.display = 'none';
                 }
             });
-        });
-    });
-</script>
+            const form = document.getElementById(`reply-form-${commentId}`);
+            form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+        }
 
-{% endblock content %}
+        function loadMoreReplies(commentId) {
+            const repliesDiv = document.getElementById(`replies-${commentId}`);
+            const allReplies = repliesDiv.querySelectorAll('.reply');
+            const loadMoreBtn = repliesDiv.querySelector('.load-more-btn');
+
+            const visibleReplies = Array.from(allReplies).filter(reply => reply.style.display !== 'none');
+            const totalReplies = allReplies.length;
+            const nextReplies = Array.from(allReplies).slice(visibleReplies.length, visibleReplies.length + 5);
+
+            nextReplies.forEach(reply => {
+                reply.style.display = 'block';
+            });
+
+            if (visibleReplies.length + nextReplies.length >= totalReplies) {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('.replies').forEach(repliesDiv => {
+                const allReplies = repliesDiv.querySelectorAll('.reply');
+                allReplies.forEach((reply, index) => {
+                    if (index >= 5) {
+                        reply.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        function toggleComments(btn) {
+            const commentsSection = document.querySelector('.comments');
+            const commentForm = document.querySelector('.comment-forms');
+
+          
+            if (commentsSection.style.display === 'none') {
+                commentsSection.style.display = 'block';
+
+
+            }
+            else {
+                commentsSection.style.display = 'none';
+            }
+
+            if (commentForm.style.display === 'none') {
+                commentForm.style.display = 'block';
+
+                
+            } else {
+                commentForm.style.display = 'none';
+            }
+
+            // Toggle the display property
+        }
+
+
+        function toggleReplies(commentId) {
+            const repliesDiv = document.getElementById(`replies-${commentId}`);
+            const button = document.getElementById(`toggle-replies-btn-${commentId}`);
+
+            if (repliesDiv.style.display === "none" || !repliesDiv.style.display) {
+                repliesDiv.style.display = "block";
+                button.textContent = "Hide Replies";
+            } else {
+                repliesDiv.style.display = "none";
+                button.textContent = "Show Replies";
+            }
+        }
+    </script>
+
+    {% endblock content %}

@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <title>
         {% block title %}
@@ -12,41 +18,477 @@
     </title>
     <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
 </head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Signika+Negative&display=swap');
+
+  
+    body {
+        background-color: #ffffff;
+        color: #888;
+        font-family: 'Arial', sans-serif;
+        transition: background-color 0.5s, color 0.5s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+    }
+
+    * {
+        top: 0;
+        box-sizing: border-box;
+        text-decoration: none;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-family: 'Signika Negative', sans-serif;
+        color: #000000;
+
+    }
+
+    a {
+        color: #000000;
+    }
+
+   
+
+    .wholenav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 30px 12px 30px;
+        box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        position: fixed;
+        width: 100%;
+        background-color: white;
+    }
+
+    .left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .left p {
+        font-family: "Dancing Script", cursive;
+        font-size: x-large;
+        font-weight: 600;
+
+    }
+
+    .center ul {
+        display: flex;
+        justify-content: space-between;
+        gap: 5em;
+
+
+    }
+
+    .center ul li {
+        width: 100px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .center ul li:hover {
+        background-color: #f9f9f9;
+        width: 100px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .right ul {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+
+    }
+
+    .bell,
+    .more_div {
+        background-color: #dadde1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+    }
+
+
+    .profile_imgs img,
+    .profile_img img {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+    }
+
+
+
+    .drop {
+        width: 400px; /* The width of the dropdown */
+        padding: 20px;
+        box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        border-radius: 12px;
+        background-color: white;
+        position: fixed; /* This allows you to control the position relative to the viewport */
+        top: 80px; /* Adjust based on your layout */
+        right: 20px; /* Positions it 30px away from the right edge */
+        z-index: 1000; /* Ensures it appears above other elements */
+        display: none;
+
+    }
+    
+    .info {
+        box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        padding: 10px;
+        border-radius: 12px;
+
+
+
+    }
+
+    .info_side {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 10px;
+        border-radius: 12px;
+
+
+
+
+    }
+
+
+
+    .info_side:hover {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 10px;
+        border-radius: 12px;
+        background-color: #dadde1;
+
+
+
+
+    }
+
+    .more {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .more div {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .hide {
+        display: block;
+    }
+
+    .side {
+        width: 320px;
+        height: 100vh;
+        position: fixed;
+        padding: 13px 30px 13px 30px;
+        float: left;
+        background-color: white
+
+
+
+    }
+
+
+    .sideinfo {
+        margin-top: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+
+
+
+    }
+
+
+    .more_div_side {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+
+    }
+
+    .content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 100vw;
+        top: 0;
+        margin-top: 70px;
+        flex-direction: column;
+
+
+    }
+
+
+    @media (max-width: 768px) {
+        .wholenav .center {
+            display: none;
+        }
+
+        .right ul li:nth-child(2) {
+            display: none;
+        }
+
+        .side {
+            width: 100%;
+            background-color: #f9f9f9;
+            left: -100%;
+            transition: .6s linear;
+
+
+            
+        }
+
+     
+
+        .showSide {
+            left: 0;
+        }
+
+
+    }
+
+    @media (max-width: 450px) {
+        .drop {
+            width: 90%;
+            right: 10px;
+        }
+        
+    }
+
+</style>
 
 <body>
-    {% if user.is_authenticated %}
-    <p>hi this is a social media app</p>
-    <p>hi {{ user.username }}</p>
-    <p>hi {{ user.id }}</p>
+    <div>
+        {% if user.is_authenticated %}
 
-    <div style="display: flex; gap:30px;">
-        <a href="{% url 'home' %}">home</a>
-        <a href="{% url 'logout' %}">logout</a>
-        <a href="{% url 'profile' %}">profile</a>
-        <a href="{% url 'posts' %}">posts</a>
-        <a href="{% url 'favourite_post' %}">saved posts</a>
+        <div style="display: flex; gap:30px;">
+            <a href="{% url 'home' %}">home</a>
+            <a href="{% url 'logout' %}">logout</a>
+            <a href="{% url 'profile' %}">profile</a>
+            <a href="{% url 'posts' %}">posts</a>
+            <!-- <a href="{% url 'favourite_post' %}">saved posts</a>
         <a href="{% url 'create_post' %}">create post</a>
         <a href="{% url 'notifications' %}"> <span id="notification-counter">0</span> 
             🔔 notifications</a>
         <a href="{% url 'chat:user_list' %}"> chat </a>
         <a href="{% url 'search_term' %}"> search </a>
-        <a href="{% url 'history_list' %}"> history list </a>
+        <a href="{% url 'history_list' %}"> history list </a> -->
+            <p>hi {{ user.username }}</p>
+
+        </div>
+
+        <div class="wholee">
+            <div class="wholenav">
+                <div class="left">
+                    <i class="fa-solid fa-bars fa-xl" onclick="showSide()"></i>
+
+                    <p>LasuTrends</p>
+                </div>
+                <div class="center">
+                    <ul>
+                    
+
+
+                        <li><a href="{% url 'home' %}"><i class="fa-solid fa-house fa-xl"></i></a></li>
+                        <li> <a href="{% url 'chat:user_list' %}"><i class="fa-brands fa-facebook-messenger fa-xl"></i> </a></li>
+                        <li> <a href="{% url 'profile' %}"><i class="fa-solid fa-user fa-xl"></i></a></li>
+
+                    </ul>
+                </div>
+                <div class="right">
+                    <ul>
+                        <li>
+                            <div class="bell">
+                                <a href="{% url 'search_term' %}"> <i class="fa-solid fa-search fa-xl"></i> </a>
+                                
+
+                            </div>
+                        </li>
+                        <li>
+                            <div class="bell">
+                                <a href="{% url 'notifications' %}"> <span id="notification-counter">0</span> <i class="fa-solid fa-bell fa-xl"></i></a>
+                                
+
+                            </div>
+                        </li>
+                        <li>
+                            <div class="profile_imgs">
+                                
+                                {% if user.profile.profile_picture  %}
+                                <img src="{{ user.profile.profile_picture.url }}"alt="">
+                                
+                                {% else %}
+                                <p>hi</p>
+                                {% endif %}
+                                    
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="side">
+                <div class="left">
+                    <i class="fa-solid fa-bars fa-xl" onclick="showSide()"></i>
+                    <p>LasuTrends</p>
+                </div>
+                <div class="sideinfo">
+                    <div class="info_side">
+                        <div class="profile_img">
+                            
+                            {% if  user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="">
+
+                            
+                                
+                            {% else %}
+                                <p>hi</p>
+                            {% endif %}
+                        </div>
+                        <p>{{ user.username }}</p>
+
+                    </div>
+
+                    <a href="{% url 'posts' %}">  <div class="info_side">
+                        <div class="profile_img">
+                            <div class="more_div_side"><i class="fa-solid fa-home fa-xl"></i></div>
+                        </div>
+                        <p>Home</p>
+
+                    </div></a>
+
+
+                    <a href="{% url 'favourite_post' %}"><div class="info_side">
+                        <div class="profile_img">
+                            <div class="more_div_side"><i class="fa-solid fa-bookmark fa-xl"></i></div>
+                        </div>
+                        <p>Saved</p>
+
+                    </div></a>
+
+                    <a href="{% url 'profile' %}"> <div class="info_side">
+                        <div class="profile_img">
+                            <div class="more_div_side"><i class="fa-solid fa-user fa-xl"></i></div>
+                        </div>
+                        <p>Profile</p>
+
+                    </div></a>
+                   
+                    <a href="{% url 'history_list' %}">  <div class="info_side">
+                        <div class="profile_img">
+                            <div class="more_div_side"><i class="fa-solid fa-history fa-xl"></i></div>
+                        </div>
+                        <p>History</p>
+
+                    </div> </a> 
+
+                    <a href="{% url 'logout' %}"> <div class="info_side">
+                        <div class="profile_img">
+                            <div class="more_div_side"><i class="fa-solid fa-right-from-bracket fa-xl"></i></div>
+                        </div>
+                        <p>Logout</p>
+
+                    </div></a>
+
+
+           
+                   
+                        
+
+
+
+
+                </div>
+            </div>
+
+
+            <div class="drop">
+                <div class="info">
+                    <div class="profile_img">
+                        
+                        {% if  user.profile.profile_picture  %}
+                        <img src="{{ user.profile.profile_picture.url }}" alt=""></div>
+
+                            
+                        {% else %}
+                        <p>hi</p>
+                            
+                        {% endif %}
+                    <p>{{ user.username }}</p>
+
+                </div>
+                <div class="more">
+                    <div>
+                        <div class="more_div"><i class="fa-solid fa-right-from-bracket fa-xl"></i></div>
+                        <p style="font-size: large;">Logout</p>
+                    </div>
+
+                    <div>
+                        <div class="more_div"><i class="fa-solid fa-gear fa-xl"></i></div>
+                        <p style="font-size: large;">Settings and Privacy</p>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+        </div>
+        {% else %}
+        <a href="{% url 'home' %}">home</a>
+        <a href="{% url 'login' %}">login</a>
+        {% endif %}
+
+        <div class="content">
+
+            {% block content %}
+            <div id="notification-list"></div>
+            {% endblock content %}
+
+
+        </div>
+
+
     </div>
 
-    {% else %}
-    <a href="{% url 'home' %}">home</a>
-    <a href="{% url 'login' %}">login</a>
-    {% endif %}
-
-    {% block content %}
-    <div id="notification-list"></div>
-    {% endblock content %}
     <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
 
     <script>
         const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
         const notificationSocket = new WebSocket(`${wsProtocol}://${window.location.host}/ws/notifications/`);
-        
+
         const notificationCounter = document.getElementById("notification-counter");
 
         // Function to update the visibility of the notification counter
@@ -86,6 +528,21 @@
         };
         // Initial visibility check on page load
         updateNotificationCounter();
+
+              let profile_img = document.querySelector(".profile_imgs")
+        let drop = document.querySelector(".drop")
+        let side = document.querySelector(".side")
+        profile_img.addEventListener("click", function () {
+            console.log('hi there');
+            drop.classList.toggle("hide")
+
+        })
+
+        function showSide() {
+            side.classList.toggle("showSide");
+
+        
+        }
     </script>
 </body>
 

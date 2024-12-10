@@ -101,7 +101,8 @@ class CreatePostView(APIView):
 
     def post(self, request, *args, **kwargs):
         content = request.data.get("content")
-        file = request.FILES.get("files")
+        file = request.FILES.get("media")
+        images = request.FILES.getlist("images") 
 
         post = Post.objects.create(
             media=file,
@@ -109,8 +110,12 @@ class CreatePostView(APIView):
             user=request.user
         )
         post.save()
+        for image in images:
+            PostImage.objects.create(post=post, image=image)# "images" is the field name in the form
 
-        return Response({"message": "Post created successfully!"}, status=status.HTTP_201_CREATED)
+        serializer = PostSerializer(post)
+
+        return Response({"message": "Post created successfully!", "post": serializer.data}, status=status.HTTP_201_CREATED)
 
 
 # class Postlist(APIView):

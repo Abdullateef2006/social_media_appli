@@ -1,25 +1,117 @@
 {% extends 'Base.html' %}
 
-
 {% block title %}
- Favourite posts
-    
+Favorite Posts
 {% endblock title %}
-    
-
 
 {% block content %}
-<p>hi</p>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
-{% for saved in saved_post %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    body {
+        font-family: 'Poppins', sans-serif;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        padding: 40px;
+    }
 
-<a href="{% url 'posts_detail' saved.name.id %}">{{saved.name.content}}</a>
+    .container {
+        max-width: 800px; /* Increased width for a larger layout */
+        width: 100%;
+        padding: 20px;
+    }
 
-<p>{{saved.name.media}}</p>
-<p>{{saved.name.created_at|timesince}} ago</p>
+    .post {
+        background: #fff;
+        margin-bottom: 20px;
+        padding: 10px; /* Increased padding for more space */
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        display: flex;
+        gap: 20px; /* Increased gap between image and details */
+        align-items: flex-start;
+    }
 
+    .post img {
+        width: 120px; /* Increased image size */
+        height: 120px; /* Increased image size */
+        border-radius: 10px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+    }
+
+    .post-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px; /* Increased gap between details */
+    }
+
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 15px; /* Larger gap between username and time */
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #2196F3;
+        font-size: 18px; /* Increased font size */
+    }
+
+    .post-time {
+        font-size: 14px; /* Increased font size */
+        color: #aaa;
+        margin-left: auto;
+    }
+
+    .post-content {
+        font-size: 16px; /* Increased font size */
+        line-height: 1.8; /* Larger line height for better readability */
+        color: #555;
+    }
+
+    .post-content a {
+        color: #2196F3;
+        text-decoration: none;
+    }
+
+    .download-link {
+        font-size: 14px; /* Increased font size */
+        color: #2196F3;
+        margin-top: 10px;
+        text-align: right;
+    }
+</style>
+
+<div class="container">
+    <h1 style="font-size: 24px; margin-bottom: 20px; text-align: center; color: #2196F3;">Favorite Posts</h1>
     
-{% endfor %}
-    
+    {% for saved in saved_post %}
+    <div class="post">
+        {% if saved.name.media %}
+        <img src="{{ saved.name.media.url }}" alt="Post Media">
+        {% else %}
+        <p></p>
+        {% endif %}
+            
+        <div class="post-details">
+            <div class="post-header">
+                <div class="user-name"><a href="{% url 'creator_profile' saved.name.user.id %}">{{ saved.name.user.username }}</a></div>
+                <div class="post-time">{{ saved.name.created_at|timesince }} ago</div>
+            </div>
+
+            <div class="post-content">
+                <p><a href="{% url 'posts_detail' saved.name.id %}">{{ saved.name.content|truncatewords:12 }}</a></p>
+            </div>
+
+            {% if saved.name.media %}
+            <a href="{{ saved.name.media.url }}" download class="download-link">Download</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% endblock content %}
-    

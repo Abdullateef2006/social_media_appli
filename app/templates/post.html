@@ -1,4 +1,5 @@
-{% extends 'Base.html' %}
+{% extends "base.html" %}
+
 {% load social_share %}
 
 {% block title %}
@@ -7,99 +8,449 @@ posts
 
 {% block content %}
 
-{% for data in post_profile_data reversed %}
-<div>
-    <a href="{% url 'creator_profile' data.post.user.id %}">{{ data.post.user.username }}</a>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-    {% if data.creator_profile and data.creator_profile.profile_picture %}
-    <img src="{{ data.creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
-    {% else %}
-   <div style="width: 200px; border-radius:50%; ">
-    hi
-   </div>
-    {% endif %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Signika+Negative&display=swap');
 
-    {% if data.post.media %}
-    <img src="{{ data.post.media.url }}" width="200" alt="Post Media">
-    <video
-    id="my-video"
-    class="video-js"
-    controls
-    preload="auto"
-    width="640"
-    height="264"
-    poster=""
-    data-setup="{}"
-  >
-    <source src="{{ data.post.media.url }}" type="video/mp4" />
-    <p class="vjs-no-js">
-      To view this video please enable JavaScript, and consider upgrading to a
-      web browser that
-      <a href="{{ data.post.media.url }}" target="_blank"
-        >supports HTML5 video</a
-      >
-    </p>
-  </video>
-    <a href="{{ data.post.media.url }}" download="">download</a>
-    {% endif %}
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        text-decoration: none;
+        font-family: 'Signika Negative', sans-serif;
+    }
 
-    <p><a href="{% url 'posts_detail' data.post.id %}">{{ data.post.content|truncatewords:6 }}</a></p>
-    <p>{{ data.post.created_at|timesince }} ago</p>
-    <a href="{% url 'saved_post' data.post.id %}">save post</a>
-    <div class="like-section">
-        <form id="like-form-{{ data.post.id }}" action="{% url 'like_posts' data.post.id %}" method="POST">
-            {% csrf_token %}
-            {% if user.is_authenticated %}
-                <button type="button" class="btn" id="like-btn-{{ data.post.id }}" onclick="toggleLike('{{ data.post.id }}')">
-                    {% if user in data.post.likes.all %}
-                        Unlike
+    body {
+        background-color: #ffffff;
+        color: #888;
+        transition: background-color 0.5s, color 0.5s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+    }
+
+    body.dark-mode {
+        background-color: #1e1e1e;
+        color: #fff;
+    }
+
+    .container {
+        max-width: 800px;
+        width: 100%;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    body.dark-mode .container {
+        background-color: #2a2a2a;
+    }
+
+    .post-image {
+        width: 100%;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 1.5em;
+        color: #2196F3;
+    }
+
+    .post {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        padding: 10px;
+    }
+
+    body.dark-mode .post {
+        background-color: #333;
+        border: 1px solid #555;
+    }
+
+    .post-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 10px;
+    }
+
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .user-name {
+        color: #2196F3;
+        font-weight: bold;
+    }
+
+    a {
+        color: #000;
+        font-weight: 500;
+    }
+
+    .post-time {
+        color: #888;
+    }
+
+    .post-content {
+        color: inherit;
+    }
+
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        color: #666;
+        margin-top: 10px;
+    }
+
+    body.dark-mode .actions {
+        color: #aaa;
+    }
+
+    .action-btn {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: #aaa;
+
+    }
+
+    .action-btn i {
+        margin-right: 5px;
+    }
+
+    .comments {
+        display: none;
+        margin-top: 20px;
+        color: #555;
+    }
+
+    body.dark-mode .comments {
+        color: #ccc;
+    }
+
+    .comment {
+        margin-top: 10px;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+    }
+
+    body.dark-mode .comment {
+        border-top: 1px solid #555;
+    }
+
+    .comment-form {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .comment-input {
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        color: #000;
+    }
+
+    body.dark-mode .comment-input {
+        background-color: #333;
+        border: 1px solid #555;
+        color: #fff;
+    }
+
+    .comment-submit {
+        padding: 10px;
+        background-color: #2196F3;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .comment-submit:hover {
+        background-color: #1565C0;
+    }
+
+    label.switch {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #2196F3;
+        margin-top: 20px;
+    }
+
+    body.dark-mode label.switch {
+        color: #fff;
+    }
+
+    label.switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+        background-color: #ccc;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.5s;
+    }
+
+    label.switch input:checked+.slider {
+        background-color: #2196F3;
+
+    }
+
+    label.switch input:checked+.slider:before {
+        transform: translateX(26px);
+    }
+
+    .btn_like {
+        background-color: transparent;
+        border: none;
+
+    }
+
+
+    .swiper {
+        width: 100%;
+        height: 500px;
+    }
+
+    .swiper-slide {
+        text-align: center;
+        font-size: 18px;
+        background: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+ 
+
+
+    @media (max-width: 768px) {
+        .container {
+            width: 100%;
+        }
+    }
+</style>
+
+
+
+<div class="container">
+
+    {% for data in post_profile_data reversed %}
+
+    <div class="post">
+        <div class="post-header">
+            <div class="user-info">
+                {% if data.creator_profile and data.creator_profile.profile_picture %}
+
+                <div class="user-avatar">
+                    <img src="{{ data.creator_profile.profile_picture.url }}" alt="User Avatar">
+                </div>
+                {% else %}
+                <div class="user-avatar">
+                    <img src="determined-sportswoman-holding-dumbbell-dark.jpg" alt="User Avatar">
+                </div>
+                {% endif %}
+                <div class="user-name"><a href="{% url 'creator_profile' data.post.user.id %}">{{data.post.user.username}}</a></div>
+            </div>
+            <div class="post-time">{{ data.post.created_at|timesince }} ago</div>
+        </div>
+        <div class="post-content">
+            <p><a href="{% url 'posts_detail' data.post.id %}">{{ data.post.content|truncatewords:15 }}</a></p>
+            <p style="margin-top: 15px;">
+                {% for tag in data.post.tags.all %}
+                {% if tag.name %}
+                <a href="{% url 'posts_by_tag' tag.name %}">#{{ tag.name }}</a>
+                {% endif %}
+                {% endfor %}
+            </p>
+
+        </div>
+        {% if data.post.media %}
+
+        <img src="{{ data.post.media.url }}" alt="Workout Image" class="post-image">
+        <a href="{{ data.post.media.url }}" download="">download</a>
+
+        {% else %}
+        <p></p>
+        {% endif %}
+
+
+
+
+
+        {% if data.post.images.all %}
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                {% for image in data.post.images.all %}
+
+                <div class="swiper-slide"><img src="{{ image.image.url }}" alt="{{ data.post.content }}"
+                        class="post-image"></div>
+                {% endfor %}
+
+
+            </div>
+            <div class="swiper-pagination"></div>
+        </div>
+        {% else %}
+        <p></p>
+
+        {% endif %}
+
+
+
+     
+
+
+
+
+        <hr style="color: #888; margin-top:10px;">
+        <div class="actions">
+            <div class="like-section">
+                <form id="like-form-{{ data.post.id }}" action="{% url 'like_posts' data.post.id %}" method="POST">
+                    {% csrf_token %}
+                    {% if user.is_authenticated %}
+                    <div style="display: flex;">
+                        <button type="button" class="btn_like" id="like-btn-{{ data.post.id }}"
+                            onclick="toggleLike('{{ data.post.id }}')">
+                            {% if user in data.post.likes.all %}
+                            <div class="action-btn"><i class="fas fa-thumbs-up fa-2xl" style="color: #74C0FC;"></i>
+                            </div>
+                            {% else %}
+                            <div class="action-btn"><i class="fas fa-thumbs-up fa-2xl"></i> </div>
+                            {% endif %}
+                        </button>
+                        <p id="like-count-{{ data.post.id }}">{{ data.post.total_likes }} </p>
+
+                    </div>
+
                     {% else %}
-                        Like
+                    <p>You must be logged in to like this post.</p>
                     {% endif %}
-                </button>
-                <p id="like-count-{{ data.post.id }}">{{ data.post.total_likes }} Like{{ data.post.total_likes|pluralize }}</p>
-            {% else %}
-                <p>You must be logged in to like this post.</p>
-            {% endif %}
-        </form>
+                </form>
+            </div>
+            <div class="action-btn"> <a href="{% url 'saved_post' data.post.id %}"><i
+                        class="fas fa-bookmark fa-xl"></i></a></div>
+        </div>
+
+        <div class="comments">
+            <div class="comment">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <img src="https://media.gq.com/photos/5b22b33cff2b0741dab80399/16:9/w_1600,c_limit/ab-workouts-GQ-alex-reside-lede.jpg"
+                            alt="User Avatar">
+                    </div>
+                    <div class="user-name">GymBuddy</div>
+                </div>
+                <div class="comment-content">You're killing it! 💪</div>
+            </div>
+        </div>
+
+        <div class="comment-form">
+            <input type="text" class="comment-input" placeholder="Add a comment...">
+            <button class="comment-submit" onclick="addComment(this)">Submit</button>
+        </div>
     </div>
-    <hr>
-{% empty %}
-    <p>No posts found.</p>
-{% endfor %}
+
+
+    {% endfor %}
+
+    <!-- Add more posts here -->
+
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
 <script>
-  function toggleLike(postId) {
-    const likeButton = document.getElementById(`like-btn-${postId}`);
-    const likeCount = document.getElementById(`like-count-${postId}`);
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    function toggleLike(postId) {
+        const likeButton = document.getElementById(`like-btn-${postId}`);
+        const likeCount = document.getElementById(`like-count-${postId}`);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    fetch(`${postId}/like/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
+        fetch(`${postId}/like/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                likeCount.innerText = data.total_likes;
+
+                if (data.liked) {
+                    likeButton.innerHTML = '<div class="action-btn"><i class="fas fa-thumbs-up fa-2xl" style="color: #74C0FC;"></i> </div>';
+                    likeButton.classList.add('btn-danger');
+                    likeButton.classList.remove('btn-success');
+                } else {
+                    likeButton.innerHTML = '<div class="action-btn"><i class="fas fa-thumbs-up fa-2xl" ></i> </div>';
+                    likeButton.classList.add('btn-success');
+                    likeButton.classList.remove('btn-danger');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    var swiper = new Swiper(".mySwiper", {
+        pagination: {
+            el: ".swiper-pagination",
+            dynamicBullets: true,
         },
-    })
-    .then(response => response.json())
-    .then(data => {
-        likeCount.innerText = data.total_likes;
+    });
 
-        if (data.liked) {
-            likeButton.innerText = 'Unlike';
-            likeButton.classList.add('btn-danger');
-            likeButton.classList.remove('btn-success');
-        } else {
-            likeButton.innerText = 'Like';
-            likeButton.classList.add('btn-success');
-            likeButton.classList.remove('btn-danger');
-        }
-    })
-    .catch(error => console.error('Error:', error));
-  }
+
 </script>
+
+
 
 {% endblock content %}

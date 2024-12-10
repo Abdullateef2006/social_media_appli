@@ -1,26 +1,147 @@
 {% extends '../Base.html' %}
 
-
 {% block title %}
 Login
-    
 {% endblock title %}
 
-
 {% block content %}
-{% for message in messages %}
-<p>{{message}}</p>
-    
-{% endfor %}
-<form action="" method="post">
+<style>
+    /* General Styles */
+    body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: 'Arial', sans-serif;
+        background-color: #f3f4f6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-    {% csrf_token %}
-    <input type="text" name="username" placeholder="enter your username">
-    <input type="password" name="password" id="" placeholder="enter your password">
-    <input type="submit" value="Submit">
-    <p>Don't have an account <a href="{% url 'register' %}">register here</a></p>
-</form>
-    
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-title {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 1em;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1em;
+    }
+
+    .login-container input[type="submit"] {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border: none;
+        background: #6c63ff;
+        color: white;
+        font-size: 1.2em;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background 0.3s ease;
+    }
+
+    .login-container input[type="submit"]:hover {
+        background: #8a33fd;
+    }
+
+    .login-container p {
+        margin-top: 15px;
+        font-size: 0.9em;
+        text-align: center;
+        color: #555;
+    }
+
+    .login-container a {
+        color: #6c63ff;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .login-container a:hover {
+        text-decoration: underline;
+    }
+
+    /* Error Message Styles */
+    .error-messages {
+        background: #ffe5e5;
+        border: 1px solid #ff9999;
+        color: #d63333;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+
+    .error-messages ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .error-messages li {
+        font-size: 0.9em;
+    }
+</style>
+
+<div class="login-container">
+    <form action="" method="post">
+        {% csrf_token %}
+        
+        <div class="form-title">Log in to Your Account</div>
+
+        <!-- Error Messages -->
+        {% if messages %}
+        <div class="error-messages">
+            <ul>
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Username Input -->
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+
+        <!-- Submit Button -->
+        <input type="submit" value="Log In">
+
+        <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+    </form>
+</div>
 {% endblock content %}
-    
-    

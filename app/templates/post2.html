@@ -1,29 +1,152 @@
 {% extends 'Base.html' %}
+{% load social_share %}
 
 {% block title %}
-    posts
+posts
 {% endblock title %}
 
 {% block content %}
+    
 
-{% for data in post_profile_data %}
+{% for data in post_profile_data reversed %}
+<div>
     <a href="{% url 'creator_profile' data.post.user.id %}">{{ data.post.user.username }}</a>
-    
-    {% if data.creator_profile %}
-        <img src="{{ data.creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
+
+    {% if data.creator_profile and data.creator_profile.profile_picture %}
+    <img src="{{ data.creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
+    {% else %}
+   <div style="width: 200px; border-radius:50%; ">
+    hi
+   </div>
     {% endif %}
-    
+
     {% if data.post.media %}
-        <img src="{{ data.post.media.url }}" width="200" alt="Post Media">
+    <img src="{{ data.post.media.url }}" width="200" alt="Post Media">
+    <video
+    id="my-video"
+    class="video-js"
+    controls
+    preload="auto"
+    width="640"
+    height="264"
+    poster=""
+    data-setup="{}"
+  >
+    <source src="{{ data.post.media.url }}" type="video/mp4" />
+    <p class="vjs-no-js">
+      To view this video please enable JavaScript, and consider upgrading to a
+      web browser that
+      <a href="{{ data.post.media.url }}" target="_blank"
+        >supports HTML5 video</a
+      >
+    </p>
+  </video>
+    <a href="{{ data.post.media.url }}" download="">download</a>
     {% endif %}
-    
-    <p><a href="{% url 'posts_detail' data.post.id %}">{{ data.post.content }}</a></p>
-    <p>{{ data.post.created_at }}</p>
-    
+
+    <p><a href="{% url 'posts_detail' data.post.id %}">{{ data.post.content|truncatewords:6 }}</a></p>
+    <p>{{ data.post.created_at|timesince }} ago</p>
+    <p> 
+        {% for tag in data.post.tags.all %}
+        <a href="{% url 'posts_by_tag' tag.name %}">#{{ tag.name }}</a>
+
+        {% endfor %}
+    </p>
+    <a href="{% url 'saved_post' data.post.id %}">save post</a>
+    <div class="like-section">
+        <form id="like-form-{{ data.post.id }}" action="{% url 'like_posts' data.post.id %}" method="POST">
+            {% csrf_token %}
+            {% if user.is_authenticated %}
+                <button type="button" class="btn" id="like-btn-{{ data.post.id }}" onclick="toggleLike('{{ data.post.id }}')">
+                    {% if user in data.post.likes.all %}
+                        Unlike
+                    {% else %}
+                        Like
+                    {% endif %}
+                </button>
+                <p id="like-count-{{ data.post.id }}">{{ data.post.total_likes }} Like{{ data.post.total_likes|pluralize }}</p>
+            {% else %}
+                <p>You must be logged in to like this post.</p>
+            {% endif %}
+        </form>
+    </div>
+    <hr>
 {% empty %}
     <p>No posts found.</p>
 {% endfor %}
 
-<hr>
+</div>
+
+<script>
+  function toggleLike(postId) {
+    const likeButton = document.getElementById(`like-btn-${postId}`);
+    const likeCount = document.getElementById(`like-count-${postId}`);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        likeCount.innerText = data.total_likes;
+
+        if (data.liked) {
+            likeButton.innerText = 'Unlike';
+            likeButton.classList.add('btn-danger');
+            likeButton.classList.remove('btn-success');
+        } else {
+            likeButton.innerText = 'Like';
+            likeButton.classList.add('btn-success');
+            likeButton.classList.remove('btn-danger');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+  }
+</script>
 
 {% endblock content %}
+
+
+<!-- <a href="{% url 'creator_profile' post.user.id %}">{{ post.user.username }}</a>
+
+{% if creator_profile %}
+{% if creator_profile.profile_picture %}
+<img src="{{ creator_profile.profile_picture.url }}" width="100" alt="Profile Picture">
+{% else %}
+<p>No profile picture available</p>
+{% endif %}
+{% else %}
+<p>No profile information available</p>
+{% endif %}
+
+{% if post.media %}
+<img src="{{ post.media.url }}" width="200">
+{% endif %}
+
+<p>{{ post.created_at|timesince }} ago</p>
+
+<a href="{% url 'saved_post' post.id %}">Save Post</a>
+
+<div class="share-buttons">
+    {% post_to_facebook request.build_absolute_uri "Share on Facebook" "btn-facebook" %}
+    {% post_to_twitter post.content|slice:":100" request.build_absolute_uri "Share on Twitter" "btn-twitter" %}
+    {% post_to_linkedin request.build_absolute_uri "btn-linkedin" %}
+    {% post_to_whatsapp request.build_absolute_uri "Share on WhatsApp" "btn-whatsapp" %}
+    {% copy_to_clipboard request.build_absolute_uri "Copy to clipboard!" %}
+</div>
+
+
+
+
+<h4>Add a comment:</h4>
+<form method="POST" class="comment-form">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <input type="hidden" name="post_id" value="{{ post.id }}">
+    <button type="submit" name="comment_form" class="comment-submit">Submit Comment</button>
+</form> -->

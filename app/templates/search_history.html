@@ -1,33 +1,132 @@
 {% extends 'Base.html' %}
 
 {% block title %}
-search history
-    
+Search History
 {% endblock title %}
 
-
-
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+<style>
 
 
-{% if history %}
-<a href="{% url 'clear_search_history' %}">Clear All Search History</a>
+    .container {
+        width: 800px;
 
-    
-{% endif %}
-{% for history in history %}
-<p>{{history.query}}</p>
-<p>{{history.timestamp}}</p>
-<a href="{% url 'delete_search_history_item' history.id %}">Delete</a>
-{% empty %}
-<p>No search history found.</p>
+    }
 
-    
-{% endfor %}
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
 
+    .history-list {
+        list-style-type: none;
+        padding: 0;
+    }
 
-    
-    
+    .history-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+
+    }
+
+    .history-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .history-item p {
+        margin: 0;
+        font-size: 0.95em;
+        color: #555;
+    }
+
+    .history-actions {
+        display: flex;
+        gap: 15px;
+    }
+
+    .history-actions a {
+        color: #007BFF;
+        text-decoration: none;
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+
+    .history-actions a:hover {
+        text-decoration: underline;
+    }
+
+    .clear-history {
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .clear-history a {
+        font-size: 1em;
+        font-weight: bold;
+        color: #DC3545;
+        text-decoration: none;
+    }
+
+    .clear-history a:hover {
+        text-decoration: underline;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #666;
+        font-size: 1em;
+        margin: 20px 0;
+    }
+
+    .history-item div {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .history-item div p {
+        font-size: 1.0em;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+         width: 95%;
+        }
+     }
+</style>
+
+<div class="container">
+    <h1>Search History</h1>
+
+    {% if history %}
+        <div class="clear-history">
+            <a href="{% url 'clear_search_history' %}">Clear All Search History</a>
+        </div>
+
+        <ul class="history-list">
+            {% for item in history %}
+                <li class="history-item">
+                    <div>
+                        <p><strong>Query:</strong> {{ item.query }}</p>
+                        <p><strong>Timestamp:</strong> {{ item.timestamp }}</p>
+                    </div>
+                    <div class="history-actions">
+                        <a href="{% url 'delete_search_history_item' item.id %}">Delete</a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="empty-message">No search history found.</p>
+    {% endif %}
+</div>
 {% endblock content %}
-    
-    

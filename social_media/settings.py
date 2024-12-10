@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-d3*ky#(=on7huncl7+pkm%fpcs7p$#2&@!kh6m9m*%uv$)w*2b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'djoser',
     "corsheaders",
     "drf_spectacular",
+        'taggit',
+
     
 
 ]
@@ -193,3 +195,5 @@ SPECTACULAR_SETTINGS = {
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+TAGGIT_CASE_INSENSITIVE = True

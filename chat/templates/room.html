@@ -9,6 +9,10 @@ Chat Room
 
 {% block content %}
 <style>
+    .container {
+        width: 800px;
+    }
+
     body {
         font-family: 'Roboto', sans-serif;
         background-color: #e9ecef;
@@ -52,20 +56,18 @@ Chat Room
         overflow-y: auto;
         margin: 10px auto;
         max-width: 600px;
-        position: relative;
     }
 
     .message {
         padding: 10px;
         margin: 5px 0;
         border-radius: 10px;
-        position: relative;
         clear: both;
         display: flex;
         flex-direction: column;
     }
 
-    .message.left {
+    .message.lefts {
         background-color: #f1f1f1;
         text-align: left;
         float: left;
@@ -77,6 +79,9 @@ Chat Room
         text-align: right;
         float: right;
         max-width: 70%;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
     }
 
     .message strong {
@@ -141,6 +146,10 @@ Chat Room
         color: red;
     }
 
+    .imgchat {
+        width: 100%;
+    }
+
     /* Responsive */
     @media (max-width: 600px) {
         #chat-log {
@@ -158,22 +167,28 @@ Chat Room
             margin: 5px 0;
         }
     }
-</style>
 
-<h1>Chat between {{ room_name }}</h1>
+    @media (max-width: 768px) {
+        .container {
+            width: 90%;
+        }
+    }
+</style>
+<div class="container">
+    <h1>Chat between {{ room_name }}</h1>
 <div id="online-users">
     <strong>Online Users:</strong>
     <ul id="online-users-list"></ul>
 </div>
 <div id="chat-log">
     {% for message in messages %}
-    <div class="message {% if message.user == request.user %}right{% else %}left{% endif %}">
+    <div class="message {% if message.user == request.user %}right{% else %}lefts{% endif %}">
         <strong>{{ message.user.username }}:</strong>
         {% if message.content %}
         <p>{{ message.content }}</p>
         {% endif %}
         {% if message.file %}
-        <img src="{{ message.file.url }}" alt="no image" width="250">
+        <img src="{{ message.file.url }}" alt="no image" class="imgchat">
         <p><a href="{{ message.file.url }}" target="_blank">Download File</a></p>
         {% endif %}
         <span style="font-size: 0.8em; color: #666;">{{ message.timestamp }}</span>
@@ -190,57 +205,60 @@ Chat Room
     <button id="send-message-button"><i class="fas fa-paper-plane"></i> Send</button>
 </div>
 
+
+</div>
+
 <script>
     const roomName = "{{ room_name }}";
     const currentUser = "{{ request.user.username }}";
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const chatSocket = new WebSocket(
-    protocol + window.location.host + '/ws/chat/' + roomName + '/'
-);
+        protocol + window.location.host + '/ws/chat/' + roomName + '/'
+    );
 
     chatSocket.onopen = function (e) {
         console.log("The connection was set up successfully!");
     };
 
     chatSocket.onmessage = function (e) {
-    const data = JSON.parse(e.data);
+        const data = JSON.parse(e.data);
 
-    if (data.type === 'user_status_update') {
-        // Update the list of online users
-        const onlineUsersList = document.getElementById('online-users-list');
-        onlineUsersList.innerHTML = '';
+        if (data.type === 'user_status_update') {
+            // Update the list of online users
+            const onlineUsersList = document.getElementById('online-users-list');
+            onlineUsersList.innerHTML = '';
 
-        data.online_users.forEach(username => {
-            const listItem = document.createElement('li');
-            listItem.textContent = username;
-            if (username === currentUser) {
-                listItem.style.fontWeight = 'bold';
-                listItem.textContent += ' (You)';
-            }
-            onlineUsersList.appendChild(listItem);
-        });
-    } else if (data.type === 'seen_status_update') {
-        // Update the seen status for messages sent by the current user
-        const seenBy = data.seen_by;
+            data.online_users.forEach(username => {
+                const listItem = document.createElement('li');
+                listItem.textContent = username;
+                if (username === currentUser) {
+                    listItem.style.fontWeight = 'bold';
+                    listItem.textContent += ' (You)';
+                }
+                onlineUsersList.appendChild(listItem);
+            });
+        } else if (data.type === 'seen_status_update') {
+            // Update the seen status for messages sent by the current user
+            const seenBy = data.seen_by;
 
-        document.querySelectorAll('.message.right').forEach(message => {
-            if (!message.querySelector('.seen-status')) {
-                const seenElement = document.createElement('span');
-                seenElement.className = 'seen-status';
-                seenElement.style.fontSize = '0.8em';
-                seenElement.style.color = 'green';
-                seenElement.textContent = 'Seen by ' + seenBy;
-                message.appendChild(seenElement);
-            }
-        });
-    } else {
-        // Handle incoming chat messages
-        const chatLog = document.querySelector('#chat-log');
-        const alignment = data.username === currentUser ? 'right' : 'left';
-        const fileLink = data.file_url ? `<p><a href="${data.file_url}" target="_blank">Download File</a></p>` : '';
-        const imageElement = data.file_url ? `<img src="${data.file_url}" width="250" alt="no image"></img>` : '';
+            document.querySelectorAll('.message.right').forEach(message => {
+                if (!message.querySelector('.seen-status')) {
+                    const seenElement = document.createElement('span');
+                    seenElement.className = 'seen-status';
+                    seenElement.style.fontSize = '0.8em';
+                    seenElement.style.color = 'green';
+                    seenElement.textContent = 'Seen by ' + seenBy;
+                    message.appendChild(seenElement);
+                }
+            });
+        } else {
+            // Handle incoming chat messages
+            const chatLog = document.querySelector('#chat-log');
+            const alignment = data.username === currentUser ? 'right' : 'left';
+            const fileLink = data.file_url ? `<p><a href="${data.file_url}" target="_blank">Download File</a></p>` : '';
+            const imageElement = data.file_url ? `<img src="${data.file_url}" width="250" alt="no image"></img>` : '';
 
-        const messageElement = `
+            const messageElement = `
             <div class="message ${alignment}">
                 <strong>${data.username}:</strong>
                 <p>${data.message}</p>
@@ -248,11 +266,11 @@ Chat Room
                 ${fileLink}
                 <span style="font-size: 0.8em; color: #666;">just now</span>
             </div>`;
-        
-        chatLog.innerHTML += messageElement;
-        chatLog.scrollTop = chatLog.scrollHeight;  // Auto-scroll to the bottom
-    }
-};
+
+            chatLog.innerHTML += messageElement;
+            chatLog.scrollTop = chatLog.scrollHeight;  // Auto-scroll to the bottom
+        }
+    };
 
 
     chatSocket.onclose = function (e) {

@@ -1,120 +1,255 @@
 {% extends '../Base.html' %}
 
 {% block title %}
-    
+    {{ user.username }}'s Profile
 {% endblock title %}
+
 
 {% block content %}
 
-<div>
-    {% if profile %}
-    <!-- Display the existing profile information -->
-    <div>
-    
-        <div>
-           {% if profile.profile_picture %}
-               <img src="{{ profile.profile_picture.url }}" width="400">
-           {% else %}
-               <p>No profile picture available</p>
-           {% endif %}
-           <div>
-              <div>
-                 {{ user.username }}
-              </div>
-              <p>{{ profile.bio }}</p>
-              <p>{{ profile.contact_info }}</p>
-              <p>{{ profile.phone_number }}</p>
-              <p>has {{ followers_count }} followers</p>
+<style>
+    /* Profile Page Styles */
+.profile-container {
+    width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f4f4f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
 
-              <p>{{ profile.user.email }}</p>
-           </div>
+.cover-photo img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-top: -50px;
+    padding: 10px;
+}
+
+.profile-picture img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profile-info {
+    margin-left: 20px;
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.profile-info p {
+    margin: 5px 0;
+    color: #555;
+}
+
+.stats {
+    font-size: 0.9em;
+    color: #777;
+}
+
+.tabs {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background-color: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tab-btn:hover {
+    background-color: #2196F3;
+}
+
+.tab-content {
+    display: none;
+    margin-top: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.user-list {
+    list-style: none;
+    padding: 0;
+}
+
+.user-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.action-btn {
+    background-color: #ff5252;
+    color: #fff;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.action-btn:hover {
+    background-color: #e73d3d;
+}
+
+.post-list .post-item {
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.post-item img {
+    max-width: 100%;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.date {
+    color: #888;
+    font-size: 0.85em;
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+     width: 100%;
+    }
+ }
+
+</style>
+
+<div class="profile-container">
+    <!-- Cover Photo Section -->
+    <div class="cover-photo">
+        {% if profile.cover_picture %}
+            <img src="{{ profile.cover_picture.url }}" alt="Cover Photo">
+        {% else %}
+            <img src="https://img.freepik.com/free-photo/tourist-carrying-luggage_23-2151747457.jpg?t=st=1732969093~exp=1732972693~hmac=4212526eb5b2d6b23ac6ffcc26704fe83193469b7a65ca2f24c973c5f8576336&w=826" alt="Default Cover Photo">
+        {% endif %}
+    </div>
+
+    <!-- Profile Info -->
+    <div class="profile-header">
+        <div class="profile-picture">
+            {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" alt="Profile Picture">
+            {% else %}
+                <img src="https://img.freepik.com/free-photo/tourist-carrying-luggage_23-2151747457.jpg?t=st=1732969093~exp=1732972693~hmac=4212526eb5b2d6b23ac6ffcc26704fe83193469b7a65ca2f24c973c5f8576336&w=826" alt="Default Profile Picture">
+            {% endif %}
         </div>
-     </div>
-    {% else %}
-    <p>No profile found. Please create one.</p>
-    {% endif %}
+        <div class="profile-info">
+            <h2>{{ user.username }}</h2>
+            <p>{{ profile.bio }}</p>
+            <div class="stats">
+                <span>{{ profile.total_followers }} Followers</span> | 
+                <span>{{ profile.total_following }} Following</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn" onclick="showTab('followers-tab')">Followers</button>
+        <button class="tab-btn" onclick="showTab('following-tab')">Following</button>
+        <button class="tab-btn" onclick="showTab('posts-tab')">Posts</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="followers-tab" class="tab-content">
+        <h3>Followers</h3>
+        {% if profile.followers.all %}
+            <ul class="user-list">
+                {% for follower in profile.followers.all %}
+                    <li>
+                        <span>{{ follower.username }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No followers yet.</p>
+        {% endif %}
+    </div>
+
+    <div id="following-tab" class="tab-content">
+        <h3>Following</h3>
+        {% if profile.user.following.all %}
+            <ul class="user-list">
+                {% for following in profile.user.following.all %}
+                    <li>
+                        <span>{{ following.user.username }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Not following anyone yet.</p>
+        {% endif %}
+    </div>
+
+    <div id="posts-tab" class="tab-content">
+        <h3>Posts</h3>
+            <div class="post-list">
+                {% for post in post %}
+                    <div class="post-item">
+                        <p><strong>{{ post.user.username }}</strong></p>
+                        {% if post.media %}
+                            <img src="{{ post.media.url }}" alt="Post Media" style="width: 100%;">
+                        {% endif %}
+                        <p>{{ post.content }}</p>
+                        <span class="date">{{ post.created_at|date:"F d, Y" }}</span>
+                    </div>
+                    {% empty %}
+                    <p>No posts yet.</p>
+                {% endfor %}
+            </div>
+
+    </div>
 </div>
 
+<script>
+    // Show active tab
+function showTab(tabId) {
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach((tab) => {
+        tab.classList.remove('active');
+        if (tab.id === tabId) {
+            tab.classList.add('active');
+        }
+    });
+}
+
+// Toggle follow/unfollow button
 
 
-<h1>followers</h1>
+// Default tab
+document.addEventListener('DOMContentLoaded', () => {
+    showTab('followers-tab');
+});
 
-{% for followers in followers %}
-<p>{{followers.username}}</p>
-  
-{% endfor %}
-
-<p>followers end</p>
-
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <label for="profile_pic">Profile picture</label>
-    <input type="file" name="profile_pic" style="padding-top: 5px;">
-    
-    <label for="bio">Bio</label>
-    <input type="text" name="bio" id="bio" placeholder="Enter your bio">
-    
-    <label for="contact_info">Contact info</label>
-    <input type="text" name="contact_info" id="contact_info" placeholder="Enter your contact info">
-    
-    <!-- <label for="home_address">Home Address</label>
-    <input type="text" name="home_address" id="home_address" placeholder="Enter your home address">
-     -->
-    <label for="phone_number">Phone number</label>
-    <input type="number" name="phone_number" id="phone_number" placeholder="Enter your phone number">
-    <button type="submit">Submit</button>
-    <div class="error"></div>
-
-
-    {% for post in post  %}
-    <p>{{post.user.username}}</p>
-    <p>{{post.media}}</p>
-    <p>{{post.content}}</p>
-    <p>{{post.created_at}}</p>
-
-
-
-    {% empty %}
-    <p>No posts found.</p>
-        
-    {% endfor %}
-
-
-    <div>
-        <h1>followers</h1>
-        <!-- Followers List -->
-    <h4>Followers:</h4>
-    {% if profile.followers.all %}
-        <ul>
-            {% for follower in profile.followers.all %}
-                <li><a href="{% url 'creator_profile' follower.id %}">{{ follower.username }}</a></li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No followers yet.</p>
-    {% endif %}
-
-    <!-- Following List -->
-    <h4>Following:</h4>
-    {% if profile.user.following.all %}
-        <ul>
-            {% for following in profile.user.following.all %}
-                <li><a href="{% url 'creator_profile' following.id %}">{{ following.user.username }}</a></li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Not following anyone yet.</p>
-    {% endif %}
-
-
-    <div>
-            <!-- Follow/Unfollow Button and Follower Count -->
-    {% if user.is_authenticated %}
-  
-    <p>{{ profile.total_followers }} Follower{{ profile.total_followers|pluralize }}</p>
-    <p>Following {{ profile.total_following }} users</p>
-{% endif %}
-    </div>
-    </div>
-   
-{% endblock %}
+</script>
+{% endblock content %}

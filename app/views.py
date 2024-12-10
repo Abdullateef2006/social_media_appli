@@ -36,7 +36,7 @@ def user_register(request):
 
                 messages.success(
                     request, 'Your account has been activated successfully.')
-                return redirect('home')
+                return redirect('posts')
         else:
             messages.info(request, "password does not match")
             return redirect("register")
@@ -52,7 +52,7 @@ def user_login(request):
 
         if user_auth is not None:
             login(request, user_auth)
-            return redirect("home")
+            return redirect("posts")
         else:
             messages.error(request, "invalid credentials")
             return redirect("login")
@@ -121,7 +121,13 @@ def create_post(request):
         content  = request.POST.get("content")
         file = request.FILES.get("files")
         post = Post.objects.create(media = file, content = content, user = request.user)
+        tags = request.POST.get("tags", "").split(",")
+        post.tags.add(*tags)
         post.save()
+        
+        images = request.FILES.getlist('images')  # 'images' is the name attribute in the HTML file
+        for image in images:
+            PostImage.objects.create(post=post, image=image)
         return redirect("profile")
     else:
         pass
@@ -265,6 +271,7 @@ def post_detail(request, id):
 
     comments = Comment.objects.filter(post=posts).prefetch_related('replies')
     creator_profile = Profile.objects.get(user=posts.user)
+    total_comments = comments.count() 
     
 
     return render(request, 'post_details.html', {
@@ -273,6 +280,7 @@ def post_detail(request, id):
         'comments': comments,
         'comment_form': comment_form,
         'reply_form': reply_form,
+        'total_comments' : total_comments
     })
 
 @login_required(login_url='login')
@@ -616,6 +624,12 @@ def delete_search_history_item(request, id):
     history_item.delete()
     return redirect('history_list')
 
+@login_required
+def delete_search_history_item2(request, id):
+    history_item = get_object_or_404(SearchHistory, id=id, user=request.user)
+    history_item.delete()
+    return redirect('search_term')
+
 
 @login_required
 def clear_search_history(request):
@@ -628,3 +642,16 @@ def notifications_view(request):
     notifications = Notifications.objects.filter(receiver=request.user).order_by('-created_at')
     return render(request, 'notifications.html', {'notifications': notifications})
 
+# views.py
+from django.shortcuts import render
+from taggit.models import Tag
+from .models import Post
+
+def posts_by_tag(request, tag_name):
+    # Get the tag object using the tag name
+    tag = Tag.objects.get(name=tag_name)
+    
+    # Retrieve all posts with the tag
+    posts = Post.objects.filter(tags__name=tag_name)
+    
+    return render(request, 'posts_by_tag.html', {'posts': posts, 'tag': tag})

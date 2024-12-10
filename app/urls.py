@@ -12,6 +12,7 @@ urlpatterns = [
     path('posts/', posts, name='posts'),
     # path('notification/', notification, name='notification'),
     path('notifications/', notifications_view, name='notifications'),
+    
 
     path('chat/', chatPage, name='chat'),
     path('posts/<int:id>/', post_detail, name='posts_detail'),
@@ -26,6 +27,10 @@ urlpatterns = [
     path('favourite_post/', saved_posts_list, name='favourite_post'),
     path('search_term/' , search_term, name='search_term' ),
     path('history/', history_list, name='history_list'),
+         path('delete_history_search/<int:id>/', delete_search_history_item2, name='delete_search_history_item2'),
+
      path('delete_history/<int:id>/', delete_search_history_item, name='delete_search_history_item'),
     path('clear_history/', clear_search_history, name='clear_search_history'),
+    path('tag/<str:tag_name>/', posts_by_tag, name='posts_by_tag'),
+
 ]
