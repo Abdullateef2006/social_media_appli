@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-d3*ky#(=on7huncl7+pkm%fpcs7p$#2&@!kh6m9m*%uv$)w*2b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.122.39', '127.0.0.1' ,'192.168.145.39']
 
 
 # Application definition
@@ -60,6 +60,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,7 +70,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
 
+
 ]
+
+
 
 ROOT_URLCONF = 'social_media.urls'
 
@@ -179,6 +183,10 @@ SOCIALACCOUNT_PROVIDERS = {
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
     'http://localhost:5173',
+    "http://127.0.0.1:5173",
+    "http://192.168.122.39:8000",
+
+
 
 ]
 
@@ -197,3 +205,23 @@ REST_FRAMEWORK = {
 }
 
 TAGGIT_CASE_INSENSITIVE = True
+
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+
+}
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://192.168.122.39',  # Add your frontend's address here
+]

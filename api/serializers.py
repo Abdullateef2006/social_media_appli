@@ -67,18 +67,24 @@ class PostSerializer(serializers.ModelSerializer):
     total_likes = serializers.ReadOnlyField()
     images = PostImageSerializer(many=True)
 
+
     
     class Meta:
         model = Post
         fields = ['id', 'user', 'media', 'content', 'created_at', 'total_likes', 'images',]
+ 
 
 
+class PostListSerializer(serializers.ModelSerializer): 
+    tags = serializers.SerializerMethodField()
 
-class PostListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['id', 'content', 'media', 'created_at', 'user']
+        fields = ['id', 'content', 'media', 'created_at', 'user', 'tags']
         read_only_fields = ['user']
+        
+    def get_tags(self, obj):
+        return [tag.name for tag in obj.tags.all()]
 
 
         

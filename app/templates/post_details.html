@@ -343,6 +343,22 @@ Post Details
         <p></p>
         {% endif %}
 
+        <div>
+            {% for posts in similar_post  %}
+            <p>{{posts.content}}</p>
+            
+            {% if posts.media %}
+            <img src="{{posts.media.url}}" alt="{{posts.content}}" width="200">
+            {% else %}
+            <p>image not available</p>
+
+                
+            {% endif %}
+                
+                
+            {% endfor %}
+        </div>
+
         <div class="actions" style="margin-top: 8px; margin-bottom: 8px; ">
 
             <div class="like-section">
@@ -397,6 +413,7 @@ Post Details
         </form>
 
     </div>
+    
     <div class="comments" style="display: none;">
 
         <h4>Comments:</h4>

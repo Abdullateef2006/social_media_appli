@@ -101,13 +101,15 @@ class CreatePostView(APIView):
 
     def post(self, request, *args, **kwargs):
         content = request.data.get("content")
+        tags = request.data.get("tags")
         file = request.FILES.get("media")
         images = request.FILES.getlist("images") 
 
         post = Post.objects.create(
             media=file,
             content=content,
-            user=request.user
+            user=request.user,
+            tags = tags
         )
         post.save()
         for image in images:
@@ -165,14 +167,18 @@ class PostDetailAPIView(APIView):
         comments = Comment.objects.filter(post=post)
         creator_profile = Profile.objects.get(user=post.user)
 
-        post_serializer = PostSerializer(post)
+        post_serializer = PostListSerializer(post)
         comments_serializer = CommentSerializer(comments, many=True)
         creator_profile_serializer = ProfileSerializer(creator_profile)
+        similar_posts = post.tags.similar_objects()
+        similar_posts_serializer = PostListSerializer(similar_posts, many=True)
+
 
         return Response({
             'post': post_serializer.data,
             'comments': comments_serializer.data,
-            'creator_profile': creator_profile_serializer.data
+            'creator_profile': creator_profile_serializer.data,
+            'similar_posts' : similar_posts_serializer.data
         }, status=status.HTTP_200_OK)
 
     def post(self, request, id, *args, **kwargs):
@@ -452,3 +458,12 @@ class Notification(APIView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     # print("hello there")
+    
+from django.middleware.csrf import get_token
+from django.http import JsonResponse
+
+def csrf_token_view(request):
+    token = get_token(request)  # Retrieve CSRF token
+    return JsonResponse({'csrftoken': token})  # Return it in JSON format
+
+

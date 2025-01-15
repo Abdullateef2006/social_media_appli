@@ -135,10 +135,12 @@ def create_post(request):
     
         
 
-
+import random
 @login_required(login_url='login')
 def posts(request):
-    posts = Post.objects.all()
+    
+    posts = list(Post.objects.all())
+    random.shuffle(posts)
 
     # Create a list of dictionaries where each dictionary contains a post and its creator's profile
     post_profile_data = []
@@ -272,6 +274,7 @@ def post_detail(request, id):
     comments = Comment.objects.filter(post=posts).prefetch_related('replies')
     creator_profile = Profile.objects.get(user=posts.user)
     total_comments = comments.count() 
+    similar_post = posts.tags.similar_objects()[:5]
     
 
     return render(request, 'post_details.html', {
@@ -280,7 +283,8 @@ def post_detail(request, id):
         'comments': comments,
         'comment_form': comment_form,
         'reply_form': reply_form,
-        'total_comments' : total_comments
+        'total_comments' : total_comments,
+        'similar_post' : similar_post
     })
 
 @login_required(login_url='login')
@@ -655,3 +659,5 @@ def posts_by_tag(request, tag_name):
     posts = Post.objects.filter(tags__name=tag_name)
     
     return render(request, 'posts_by_tag.html', {'posts': posts, 'tag': tag})
+
+
